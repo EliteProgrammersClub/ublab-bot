@@ -11,8 +11,7 @@ found at http://www.jibble.org/licenses/
 
 */
 
-
-package org.jibble.pircbot;
+package org.ublab.bot;
 
 import java.io.*;
 import java.net.*;

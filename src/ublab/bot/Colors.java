@@ -8,11 +8,10 @@ General Public License (GPL) and the www.jibble.org Commercial License.
 Since the GPL may be too restrictive for use in a proprietary application,
 a commercial license is also provided. Full license information can be
 found at http://www.jibble.org/licenses/
-
 */
 
 
-package org.jibble.pircbot;
+package org.ublab.bot;
 
 /**
  * The Colors class provides several static fields and methods that you may

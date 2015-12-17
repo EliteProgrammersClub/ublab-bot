@@ -11,7 +11,7 @@ found at http://www.jibble.org/licenses/
 
 */
 
-package org.jibble.pircbot;
+package org.ublab.bot;
 
 /**
  * This class is used to represent a user on an IRC server.
