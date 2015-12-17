@@ -1,32 +1,69 @@
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# Copied from https://github.com/github/gitignore
 
-# Precompiled Headers
-*.gch
-*.pch
+### IntelliJ Idea ###
+*.iml
+*.ipr
+*.iws
+.idea/
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+### Maven ###
+target/
+pom.xml.versionsBackup
+#############
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+### Eclipse ###
+*.pydevproject
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+# External tool builders
+.externalToolBuilders/
 
-# Debug files
-*.dSYM/
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+###############
+
+### Java ###
+*.class
+
+# Java Package Files #
+*.jar
+*.war
+*.ear
+############
+
+### Netbeans ###
+nbproject/private/
+build/
+bin/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+################
+
+### Linux ###
+.*
+!.gitignore
+!.gitattributes
+*~
+#############
+
