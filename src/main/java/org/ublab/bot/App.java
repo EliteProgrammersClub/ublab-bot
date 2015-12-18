@@ -32,15 +32,20 @@ public class App extends UblabBot {
 	}
 	
     public static void main( String[] args ) {
-    
+
     	// Starts ublab-bot
     	App bot = new App();
     	
-    	//Enables debugging output.
-    	bot.connect("irc.freenode.net");
+    	try {
+    		//Enables debugging output.
+    		bot.connect("irc.freenode.net");
     	
-    	//Join #ublab channel.
-    	bot.joinChannel("#ublab");
+    		//Join #ublab channel.
+    		bot.joinChannel("#ublab");
+    		
+    	} catch (Exception ex) {
+    		System.exit(1);
+    	}
     	
     	
         
