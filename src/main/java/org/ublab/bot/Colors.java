@@ -185,7 +185,7 @@ public class Colors {
     /**
      * Removes all colours from a line of IRC text.
      * 
-     * @since UblabBot 1.2.0
+     * @since UblabBot 1.0
      * 
      * @param line the input text.
      * 
@@ -255,7 +255,7 @@ public class Colors {
     /**
      * Remove formatting from a line of IRC text.
      * 
-     * @since UblabBot 1.2.0
+     * @since UblabBot 1.0
      * 
      * @param line the input text.
      * 
@@ -280,7 +280,7 @@ public class Colors {
     /**
      * Removes all formatting and colours from a line of IRC text.
      * 
-     * @since UblabBot 1.2.0
+     * @since UblabBot 1.0
      *
      * @param line the input text.
      * 
