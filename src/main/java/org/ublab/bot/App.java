@@ -19,14 +19,30 @@
  */
 package org.ublab.bot;
 
+import org.ublab.bot;
+
 /**
- * Hello world!
+ * #ublab IRC bot
  *
  */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
+public class App extends UblabBot {
+
+	public App() {
+		this.setName("ublab-bot");
+	}
+	
+    public static void main( String[] args ) {
+    
+    	// Starts ublab-bot
+    	App bot= new App();
+    	
+    	//Enables debugging output.
+    	bot.connect("irc.freenode.net");
+    	
+    	//Join #ublab channel.
+    	bot.joinChannel("#ublab");
+    	
+    	
+        
     }
 }
