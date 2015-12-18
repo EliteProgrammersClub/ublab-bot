@@ -24,10 +24,6 @@ import java.util.*;
 /**
  * This class is used to process DCC events from the server.
  *
- * @since   1.2.0
- * @author  Paul James Mutton,
- *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
- * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
  */
 public class DccManager {
     

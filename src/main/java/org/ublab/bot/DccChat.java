@@ -20,10 +20,6 @@ import java.io.*;
 /**
  * This class is used to allow the bot to interact with a DCC Chat session.
  *
- * @since   0.9c
- * @author  Paul James Mutton,
- *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
- * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
  */
 public class DccChat {
     

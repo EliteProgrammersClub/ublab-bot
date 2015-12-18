@@ -29,9 +29,6 @@ import java.util.*;
  * This running Thread also detects disconnection from the server
  * and is thus used by the OutputThread to send lines to the server.
  *
- * @author  Paul James Mutton,
- *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
- * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
  */
 public class InputThread extends Thread {
     

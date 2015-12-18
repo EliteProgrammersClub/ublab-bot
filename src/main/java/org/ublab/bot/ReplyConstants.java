@@ -28,10 +28,6 @@ package org.ublab.bot;
  * you may find these constants useful when comparing the numeric
  * value of a given code.
  * 
- * @since   1.0.0
- * @author  Paul James Mutton,
- *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
- * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
  */
 public interface ReplyConstants {
     
