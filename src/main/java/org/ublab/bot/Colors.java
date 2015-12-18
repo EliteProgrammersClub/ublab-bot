@@ -32,7 +32,7 @@ package org.ublab.bot;
  * from lines of IRC text.
  *  <p>
  * Here are some examples of how to use the contants from within a
- * class that extends PircBot and imports org.jibble.pircbot.*;
+ * class that extends UblabBot and imports org.jibble.pircbot.*;
  * 
  * <pre> sendMessage("#cs", Colors.BOLD + "A bold hello!");
  *     <b>A bold hello!</b>
@@ -189,7 +189,7 @@ public class Colors {
     /**
      * Removes all colours from a line of IRC text.
      * 
-     * @since PircBot 1.2.0
+     * @since UblabBot 1.2.0
      * 
      * @param line the input text.
      * 
@@ -259,7 +259,7 @@ public class Colors {
     /**
      * Remove formatting from a line of IRC text.
      * 
-     * @since PircBot 1.2.0
+     * @since UblabBot 1.2.0
      * 
      * @param line the input text.
      * 
@@ -284,7 +284,7 @@ public class Colors {
     /**
      * Removes all formatting and colours from a line of IRC text.
      * 
-     * @since PircBot 1.2.0
+     * @since UblabBot 1.2.0
      *
      * @param line the input text.
      * 

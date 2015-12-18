@@ -58,7 +58,7 @@ import java.util.*;
  *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
  * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
  */
-public abstract class ublab-bot implements ReplyConstants {
+public abstract class UblabBot implements ReplyConstants {
 
 
     /**
@@ -79,7 +79,7 @@ public abstract class ublab-bot implements ReplyConstants {
      * in classes which extend the ublab-bot abstract class should be responsible
      * for changing the default settings if required.
      */
-    public ublab-bot() {}
+    public UblabBot() {}
     
     
     /**

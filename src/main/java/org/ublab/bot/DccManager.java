@@ -35,9 +35,9 @@ public class DccManager {
     /**
      * Constructs a DccManager to look after all DCC SEND and CHAT events.
      * 
-     * @param bot The PircBot whose DCC events this class will handle.
+     * @param bot The UblabBot whose DCC events this class will handle.
      */
-    DccManager(PircBot bot) {
+    DccManager(UblabBot bot) {
         _bot = bot;
     }
     
@@ -150,7 +150,7 @@ public class DccManager {
     }
     
     
-    private PircBot _bot;
+    private UblabBot _bot;
     private Vector _awaitingResume = new Vector();
     
 }
