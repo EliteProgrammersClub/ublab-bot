@@ -48,15 +48,7 @@ import java.util.*;
  * normally need to be overridden.  Please read the full documentation for each
  * method to see which ones are already implemented by the ublab-bot class.
  *  <p>
- * Please visit the ublab-bot homepage at
- * <a href="http://www.jibble.org/ublab-bot.php">http://www.jibble.org/ublab-bot.php</a>
- * for full revision history, a beginners guide to creating your first ublab-bot
- * and a list of some existing Java IRC bots and clients that use the ublab-bot
- * framework.
- * 
- * @author  Paul James Mutton,
- *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
- * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
+ *
  */
 public abstract class UblabBot implements ReplyConstants {
 

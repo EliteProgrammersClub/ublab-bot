@@ -27,10 +27,6 @@ package org.ublab.bot;
  * Note that this class no longer implements the Comparable interface
  * for Java 1.1 compatibility reasons.
  *
- * @since   1.0.0
- * @author  Paul James Mutton,
- *          <a href="http://www.jibble.org/">http://www.jibble.org/</a>
- * @version    1.5.0 (Build time: Mon Dec 14 20:07:17 2009)
  */
 public class User {
     
