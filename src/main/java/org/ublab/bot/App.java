@@ -19,7 +19,7 @@
  */
 package org.ublab.bot;
 
-import org.ublab.bot;
+import org.ublab.bot.*;
 
 /**
  * #ublab IRC bot
@@ -34,7 +34,7 @@ public class App extends UblabBot {
     public static void main( String[] args ) {
     
     	// Starts ublab-bot
-    	App bot= new App();
+    	App bot = new App();
     	
     	//Enables debugging output.
     	bot.connect("irc.freenode.net");
