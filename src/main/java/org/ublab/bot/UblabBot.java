@@ -2753,14 +2753,13 @@ public abstract class UblabBot implements ReplyConstants {
      * same instance as this ublab-bot. This may be useful if you are writing
      * a multiple server IRC bot that uses more than one instance of ublab-bot.
      * 
-     * @since ublab-bot 0.9.9
      *
      * @return true if and only if Object o is a ublab-bot and equal to this.
      */
     public boolean equals(Object o) {
         // This probably has the same effect as Object.equals, but that may change...
-        if (o instanceof ublab-bot) {
-            ublab-bot other = (ublab-bot) o;
+        if (o instanceof UblabBot) {
+            UblabBot other = (UblabBot) o;
             return other == this;
         }
         return false;
