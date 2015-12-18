@@ -22,7 +22,7 @@ package org.ublab.bot;
 /**
  * This class is used to represent a user on an IRC server.
  * Instances of this class are returned by the getUsers method
- * in the PircBot class.
+ * in the UblabBot class.
  *  <p>
  * Note that this class no longer implements the Comparable interface
  * for Java 1.1 compatibility reasons.

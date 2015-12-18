@@ -25,7 +25,7 @@ import java.util.*;
 
 /**
  * A Thread which reads lines from the IRC server.  It then
- * passes these lines to the PircBot without changing them.
+ * passes these lines to the UblabBot without changing them.
  * This running Thread also detects disconnection from the server
  * and is thus used by the OutputThread to send lines to the server.
  *
@@ -37,13 +37,13 @@ public class InputThread extends Thread {
     
     /**
      * The InputThread reads lines from the IRC server and allows the
-     * PircBot to handle them.
+     * UblabBot to handle them.
      *
-     * @param bot An instance of the underlying PircBot.
+     * @param bot An instance of the underlying UblabBot.
      * @param breader The BufferedReader that reads lines from the server.
      * @param bwriter The BufferedWriter that sends lines to the server.
      */
-    InputThread(PircBot bot, Socket socket, BufferedReader breader, BufferedWriter bwriter) {
+    InputThread(UblabBot bot, Socket socket, BufferedReader breader, BufferedWriter bwriter) {
         _bot = bot;
         _socket = socket;
         _breader = breader;
@@ -78,11 +78,11 @@ public class InputThread extends Thread {
     /**
      * Called to start this Thread reading lines from the IRC server.
      * When a line is read, this method calls the handleLine method
-     * in the PircBot, which may subsequently call an 'onXxx' method
-     * in the PircBot subclass.  If any subclass of Throwable (i.e.
+     * in the UblabBot, which may subsequently call an 'onXxx' method
+     * in the UblabBot subclass.  If any subclass of Throwable (i.e.
      * any Exception or Error) is thrown by your method, then this
      * method will print the stack trace to the standard output.  It
-     * is probable that the PircBot may still be functioning normally
+     * is probable that the UblabBot may still be functioning normally
      * after such a problem, but the existance of any uncaught exceptions
      * in your code is something you should really fix.
      */
@@ -104,9 +104,9 @@ public class InputThread extends Thread {
                             pw.flush();
                             StringTokenizer tokenizer = new StringTokenizer(sw.toString(), "\r\n");
                             synchronized (_bot) {
-                                _bot.log("### Your implementation of PircBot is faulty and you have");
+                                _bot.log("### Your implementation of UblabBot is faulty and you have");
                                 _bot.log("### allowed an uncaught Exception or Error to propagate in your");
-                                _bot.log("### code. It may be possible for PircBot to continue operating");
+                                _bot.log("### code. It may be possible for UblabBot to continue operating");
                                 _bot.log("### normally. Here is the stack trace that was produced: -");
                                 _bot.log("### ");
                                 while (tokenizer.hasMoreTokens()) {
@@ -162,7 +162,7 @@ public class InputThread extends Thread {
         }
     }
     
-    private PircBot _bot = null;
+    private UblabBot _bot = null;
     private Socket _socket = null;
     private BufferedReader _breader = null;
     private BufferedWriter _bwriter = null;

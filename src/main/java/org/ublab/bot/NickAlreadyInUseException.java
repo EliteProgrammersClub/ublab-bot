@@ -21,7 +21,7 @@ package org.ublab.bot;
 
 /**
  * A NickAlreadyInUseException class.  This exception is
- * thrown when the PircBot attempts to join an IRC server
+ * thrown when the UblabBot attempts to join an IRC server
  * with a user name that is already in use.
  *
  * @since   0.9

@@ -24,7 +24,7 @@ package org.ublab.bot;
  * This interface contains the values of all numeric replies specified
  * in section 6 of RFC 1459.  Refer to RFC 1459 for further information.
  *  <p>
- * If you override the onServerResponse method in the PircBot class,
+ * If you override the onServerResponse method in the UblabBot class,
  * you may find these constants useful when comparing the numeric
  * value of a given code.
  * 
