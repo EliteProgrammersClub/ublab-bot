@@ -39,8 +39,8 @@ We have alot of ideas we would love our bot to perform, but we can only do as mu
 
 3.) Community and Fun,  Make ublab-bot perform fun applications such as generating social network diagrams of a community, passing messages on to other users;  fun bots that create comic strips, calculate mathematical expressions and even act as a quizmaster.
 
-4.) Announcements, With the growing popularity of RSS, We can ublab-bot that reads news into a channel from RSS feeds. Announce items posted on Google+, Facebook, twitter, mailing lists or even other tech events in town!
+4.) Announcements, With the growing popularity of RSS, We can make ublab-bot read news into a channel from RSS feeds. Announce items posted on Google+, Facebook, twitter, mailing lists or even other tech events in town!
 
-5.) Channel management,  IRC is accessible by anybody, you occasionally find the odd user who is intent on causing trouble. The primary target of such abuse is usually a channel, where messages may be spammed or topics may be changed. Enable ublab-bot take care of such troublemakers and thwart their evil intentions.
+5.) Channel management,  IRC is accessible by anybody, you occasionally find the odd user who is intent on causing trouble. The primary target of such abuse is usually our channel, where messages may be spammed or topics changed. Enable ublab-bot take care of such troublemakers and thwart their evil intentions.
 
 
