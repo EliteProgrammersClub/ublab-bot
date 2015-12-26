@@ -3084,7 +3084,7 @@ public abstract class UblabBot implements ReplyConstants {
     private String _name = "ublab-bot";
     private String _nick = _name;
     private String _login = "ublab-bot";
-    private String _version = "ublab-bot " + VERSION + " Java IRC Bot - www.jibble.org";
+    private String _version = "ublab-bot " + VERSION;
     private String _finger = "You ought to be arrested for fingering a bot!";
     
     private String _channelPrefixes = "#&+!";
