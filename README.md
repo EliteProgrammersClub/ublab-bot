@@ -6,7 +6,7 @@ IRC bot for #ublab on freenode
 
 This document will describe how to contribute to this project
 
-### Step 1. Star the Repo, Fork the Repo and Build a Sample bot
+### Step 1. Star && Fork the Repo and build a simple bot
 
 Clone the ublab-bot repo and build it.
 
@@ -19,7 +19,7 @@ Clone the ublab-bot repo and build it.
   This command generates a jar file for the bot 
 ````
 
-### Step 2. Contribute to the Code
+### Step 2. Contribute Code
 
 I.) Write Unit tests for each capability or functionality added.
 
