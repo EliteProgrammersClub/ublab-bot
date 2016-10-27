@@ -20,6 +20,7 @@
 package org.ublab.bot;
 
 import org.ublab.bot.*;
+import java.util.logging.Logger;
 
 /**
  * #ublab IRC bot
@@ -27,27 +28,32 @@ import org.ublab.bot.*;
  */
 public class App extends UblabBot {
 
-	public App() {
-		this.setName("ublab-bot");
-	}
-	
+    private static final String IRC_NETWORK = "irc.freenode.net";
+    private static final String IRC_CHANNEL = "#ublab";
+
+    public App() {
+        this.setName("ublab-bot");
+    }
+
     public static void main( String[] args ) {
 
-    	// Starts ublab-bot
-    	App bot = new App();
-    	
-    	try {
-    		//Enables debugging output.
-    		bot.connect("irc.freenode.net");
-    	
-    		//Join #ublab channel.
-    		bot.joinChannel("#ublab");
-    		
-    	} catch (Exception ex) {
-    		System.exit(1);
-    	}
-    	
-    	
-        
+        Logger logger = Logger.getLogger(App.class.getName());
+        // Starts ublab-bot
+        App bot = new App();
+
+        try {
+            //Enables debugging output.
+            bot.connect(IRC_NETWORK);
+            logger.info("Connected to " + IRC_NETWORK);
+            //Join #ublab channel.
+            bot.joinChannel(IRC_CHANNEL);
+            logger.info("Joined " + IRC_CHANNEL);
+
+        } catch (Exception ex) {
+            logger.warning("Caught exception. Closing...");
+            ex.printStackTrace();
+            System.exit(1);
+        }
+
     }
 }
