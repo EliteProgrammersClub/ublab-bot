@@ -17,7 +17,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package org.ublab.bot;
+package org.ublab.bot.dcc;
+
+import org.ublab.bot.UblabBot;
 
 import java.net.*;
 import java.io.*;
@@ -63,7 +65,7 @@ public class DccChat {
      * 
      * @throws IOException If the socket cannot be read from.
      */
-    DccChat(UblabBot bot, String nick, Socket socket) throws IOException {
+    public DccChat(UblabBot bot, String nick, Socket socket) throws IOException {
         _bot = bot;
         _nick = nick;
         _socket = socket;

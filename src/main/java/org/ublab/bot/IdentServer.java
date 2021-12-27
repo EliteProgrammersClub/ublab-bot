@@ -43,6 +43,10 @@ import java.io.*;
  *
  */
 public class IdentServer extends Thread {
+
+    private final UblabBot _bot;
+    private final String _login;
+    private ServerSocket _ss = null;
     
     /**
      * Constructs and starts an instance of an IdentServer that will
@@ -112,9 +116,5 @@ public class IdentServer extends Thread {
         
         _bot.log("*** The Ident server has been shut down.");
     }
-    
-    private UblabBot _bot;
-    private String _login;
-    private ServerSocket _ss = null;
     
 }

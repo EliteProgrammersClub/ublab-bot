@@ -19,6 +19,18 @@
  */
 package org.ublab.bot;
 
+import org.ublab.bot.constant.Colors;
+import org.ublab.bot.constant.ReplyConstants;
+import org.ublab.bot.dcc.DccChat;
+import org.ublab.bot.dcc.DccFileTransfer;
+import org.ublab.bot.dcc.DccManager;
+import org.ublab.bot.ds.Queue;
+import org.ublab.bot.ds.User;
+import org.ublab.bot.exception.IrcException;
+import org.ublab.bot.exception.NickAlreadyInUseException;
+import org.ublab.bot.thread.InputThread;
+import org.ublab.bot.thread.OutputThread;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -870,7 +882,7 @@ public abstract class UblabBot implements ReplyConstants {
      * 
      * @param line The raw line of text from the server.
      */
-    protected void handleLine(String line) {
+    public void handleLine(String line) {
         this.log(line);
 
         // Check for server pings.
@@ -900,19 +912,17 @@ public abstract class UblabBot implements ReplyConstants {
             else {
                 
                 if (tokenizer.hasMoreTokens()) {
-                    String token = command;
 
                     int code = -1;
                     try {
-                        code = Integer.parseInt(token);
+                        code = Integer.parseInt(command);
                     }
                     catch (NumberFormatException e) {
                         // Keep the existing value.
                     }
                     
                     if (code != -1) {
-                        String errorStr = token;
-                        String response = line.substring(line.indexOf(errorStr, senderInfo.length()) + 4, line.length());
+                        String response = line.substring(line.indexOf(command, senderInfo.length()) + 4);
                         this.processServerResponse(code, response);
                         // Return from the method.
                         return;
@@ -922,7 +932,7 @@ public abstract class UblabBot implements ReplyConstants {
                         // It must be a nick without login and hostname.
                         // (or maybe a NOTICE or suchlike from the server)
                         sourceNick = senderInfo;
-                        target = token;
+                        target = command;
                     }
                 }
                 else {
@@ -1092,7 +1102,7 @@ public abstract class UblabBot implements ReplyConstants {
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      */
-    protected void onDisconnect() {}
+    public void onDisconnect() {}
     
     
     /**
@@ -1152,7 +1162,7 @@ public abstract class UblabBot implements ReplyConstants {
                 // Stick with the default value of zero.
             }
             
-            String topic = (String) _topics.get(channel);
+            String topic = _topics.get(channel);
             _topics.remove(channel);
             
             this.onTopic(channel, topic, setBy, date, false);
@@ -2155,7 +2165,7 @@ public abstract class UblabBot implements ReplyConstants {
      * @see DccFileTransfer
      * 
      */
-    protected void onIncomingFileTransfer(DccFileTransfer transfer) {}
+    public void onIncomingFileTransfer(DccFileTransfer transfer) {}
     
     
     /**
@@ -2176,7 +2186,7 @@ public abstract class UblabBot implements ReplyConstants {
      * @see DccFileTransfer
      * 
      */
-    protected void onFileTransferFinished(DccFileTransfer transfer, Exception e) {}
+    public void onFileTransferFinished(DccFileTransfer transfer, Exception e) {}
     
     
     /**
@@ -2221,7 +2231,7 @@ public abstract class UblabBot implements ReplyConstants {
      * @see DccChat
      * 
      */
-    protected void onIncomingChatRequest(DccChat chat) {}
+    public void onIncomingChatRequest(DccChat chat) {}
     
     
     /**
@@ -2286,7 +2296,7 @@ public abstract class UblabBot implements ReplyConstants {
      * @param target The target of the TIME request, be it our nick or a channel name.
      */
     protected void onTime(String sourceNick, String sourceLogin, String sourceHostname, String target) {
-        this.sendRawLine("NOTICE " + sourceNick + " :\u0001TIME " + new Date().toString() + "\u0001");
+        this.sendRawLine("NOTICE " + sourceNick + " :\u0001TIME " + new Date() + "\u0001");
     }
     
     
@@ -2719,7 +2729,7 @@ public abstract class UblabBot implements ReplyConstants {
             return null;
         }
         // Clone the array to prevent external modification.
-        return (int[]) _dccPorts.clone();
+        return _dccPorts.clone();
     }
     
     
@@ -2743,7 +2753,7 @@ public abstract class UblabBot implements ReplyConstants {
         }
         else {
             // Clone the array to prevent external modification.
-            _dccPorts = (int[]) ports.clone();
+            _dccPorts = ports.clone();
         }
     }    
     
@@ -2842,12 +2852,12 @@ public abstract class UblabBot implements ReplyConstants {
         channel = channel.toLowerCase();
         User[] userArray = new User[0];
         synchronized (_channels) {
-            Hashtable users = (Hashtable) _channels.get(channel);
+            Hashtable<Object, User> users = _channels.get(channel);
             if (users != null) {
                 userArray = new User[users.size()];
-                Enumeration enumeration = users.elements();
+                Enumeration<User> enumeration = users.elements();
                 for (int i = 0; i < userArray.length; i++) {
-                    User user = (User) enumeration.nextElement();
+                    User user = enumeration.nextElement();
                     userArray[i] = user;
                 }
             }
@@ -2872,9 +2882,9 @@ public abstract class UblabBot implements ReplyConstants {
         String[] channels = new String[0];
         synchronized (_channels) {
             channels = new String[_channels.size()];
-            Enumeration enumeration = _channels.keys();
+            Enumeration<String> enumeration = _channels.keys();
             for (int i = 0; i < channels.length; i++) {
-                channels[i] = (String) enumeration.nextElement();
+                channels[i] = enumeration.nextElement();
             }
         }
         return channels;
@@ -2914,9 +2924,9 @@ public abstract class UblabBot implements ReplyConstants {
     private final void addUser(String channel, User user) {
         channel = channel.toLowerCase();
         synchronized (_channels) {
-            Hashtable users = (Hashtable) _channels.get(channel);
+            Hashtable<Object, User> users = _channels.get(channel);
             if (users == null) {
-                users = new Hashtable();
+                users = new Hashtable<Object, User>();
                 _channels.put(channel, users);
             }
             users.put(user, user);
@@ -2931,9 +2941,9 @@ public abstract class UblabBot implements ReplyConstants {
         channel = channel.toLowerCase();
         User user = new User("", nick);
         synchronized (_channels) {
-            Hashtable users = (Hashtable) _channels.get(channel);
+            Hashtable<Object, User> users = _channels.get(channel);
             if (users != null) {
-                return (User) users.remove(user);
+                return users.remove(user);
             }
         }
         return null;
@@ -2945,9 +2955,9 @@ public abstract class UblabBot implements ReplyConstants {
      */
     private final void removeUser(String nick) {
         synchronized (_channels) {
-            Enumeration enumeration = _channels.keys();
+            Enumeration<String> enumeration = _channels.keys();
             while (enumeration.hasMoreElements()) {
-                String channel = (String) enumeration.nextElement();
+                String channel = enumeration.nextElement();
                 this.removeUser(channel, nick);
             }
         }
@@ -2959,9 +2969,9 @@ public abstract class UblabBot implements ReplyConstants {
      */
     private final void renameUser(String oldNick, String newNick) {
         synchronized (_channels) {
-            Enumeration enumeration = _channels.keys();
+            Enumeration<String> enumeration = _channels.keys();
             while (enumeration.hasMoreElements()) {
-                String channel = (String) enumeration.nextElement();
+                String channel = enumeration.nextElement();
                 User user = this.removeUser(channel, oldNick);
                 if (user != null) {
                     user = new User(user.getPrefix(), newNick);
@@ -2988,7 +2998,7 @@ public abstract class UblabBot implements ReplyConstants {
      */
     private final void removeAllChannels() {
         synchronized(_channels) {
-            _channels = new Hashtable();
+            _channels = new Hashtable<String, Hashtable<Object, User>>();
         }
     }
 
@@ -2996,12 +3006,12 @@ public abstract class UblabBot implements ReplyConstants {
     private final void updateUser(String channel, int userMode, String nick) {
         channel = channel.toLowerCase();
         synchronized (_channels) {
-            Hashtable users = (Hashtable) _channels.get(channel);
+            Hashtable<Object, User> users = _channels.get(channel);
             User newUser = null;
             if (users != null) {
-                Enumeration enumeration = users.elements();
+                Enumeration<User> enumeration = users.elements();
                 while(enumeration.hasMoreElements()) {
-                    User userObj = (User) enumeration.nextElement();
+                    User userObj = enumeration.nextElement();
                     if (userObj.getNick().equalsIgnoreCase(nick)) {
                         if (userMode == OP_ADD) {
                             if (userObj.hasVoice()) {
@@ -3038,14 +3048,11 @@ public abstract class UblabBot implements ReplyConstants {
                     }
                 }
             }
-            if (newUser != null) {
-                users.put(newUser, newUser);
-            }
-            else {
+            if (newUser == null) {
                 // just in case ...
                 newUser = new User("", nick);
-                users.put(newUser, newUser);
             }
+            users.put(newUser, newUser);
         }
     }
 
@@ -3062,19 +3069,19 @@ public abstract class UblabBot implements ReplyConstants {
     private String _password = null;
     
     // Outgoing message stuff.
-    private Queue _outQueue = new Queue();
+    private final Queue<String> _outQueue = new org.ublab.bot.ds.Queue<>();
     private long _messageDelay = 1000;
     
     // A Hashtable of channels that points to a selfreferential Hashtable of
     // User objects (used to remember which users are in which channels).
-    private Hashtable _channels = new Hashtable();
+    private Hashtable<String, Hashtable<Object, User>> _channels = new Hashtable<String, Hashtable<Object, User>>();
     
     // A Hashtable to temporarily store channel topics when we join them
     // until we find out who set that topic.
-    private Hashtable _topics = new Hashtable();
+    private final Hashtable<String, String> _topics = new Hashtable<String, String>();
     
     // DccManager to process and handle all DCC events.
-    private DccManager _dccManager = new DccManager(this);
+    private final DccManager _dccManager = new DccManager(this);
     private int[] _dccPorts = null;
     private InetAddress _dccInetAddress = null;
     
@@ -3087,5 +3094,5 @@ public abstract class UblabBot implements ReplyConstants {
     private String _version = "ublab-bot " + VERSION;
     private String _finger = "You ought to be arrested for fingering a bot!";
     
-    private String _channelPrefixes = "#&+!";
+    private final String _channelPrefixes = "#&+!";
 }

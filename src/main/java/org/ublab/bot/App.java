@@ -19,7 +19,6 @@
  */
 package org.ublab.bot;
 
-import org.ublab.bot.*;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +37,7 @@ public class App extends UblabBot {
     public static void main( String[] args ) {
 
         Logger logger = Logger.getLogger(App.class.getName());
+
         // Starts ublab-bot
         App bot = new App();
 
