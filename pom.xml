@@ -10,7 +10,12 @@
 	<description>IRC bot for #ublab</description>
 	<url>https://github.com/EliteProgrammersClub/ublab-bot</url>
 
-
+	<properties>
+		<java.version>11</java.version>
+		<junit.version>4.13.2</junit.version>
+		<org.projectlombok.version>1.18.22</org.projectlombok.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
 	<organization>
 		<name>Black Hackers</name>
@@ -22,6 +27,11 @@
 		<developer>
 			<name>Nyah Check</name>
 		</developer>
+		<developer>
+			<name>Elroy Kanye</name>
+			<email>elroykanye@gmail.com</email>
+			<url>https://elroykanye.github.io</url>
+		</developer>
 	</developers>
 
 	<scm>
@@ -30,16 +40,12 @@
 		<url>https://github.com/EliteProgrammersClub/ublab-bot</url>
 	</scm>
 
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-
 	<dependencies>
+		<!-- junit -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -47,7 +53,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.22</version>
+			<version>${org.projectlombok.version}</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
@@ -136,6 +142,22 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${org.projectlombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
