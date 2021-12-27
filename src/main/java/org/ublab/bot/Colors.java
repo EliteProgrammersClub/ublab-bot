@@ -193,7 +193,7 @@ public class Colors {
      */
     public static String removeColors(String line) {
         int length = line.length();
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         int i = 0;
         while (i < length) {
             char ch = line.charAt(i);
@@ -263,13 +263,11 @@ public class Colors {
      */
     public static String removeFormatting(String line) {
         int length = line.length();
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i++) {
             char ch = line.charAt(i);
-            if (ch == '\u000f' || ch == '\u0002' || ch == '\u001f' || ch == '\u0016') {
+            if (!(ch == '\u000f' || ch == '\u0002' || ch == '\u001f' || ch == '\u0016')) {
                 // Don't add this character.
-            }
-            else {
                 buffer.append(ch);
             }
         }
