@@ -17,10 +17,12 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package org.ublab.bot;
+package org.ublab.bot.thread;
+
+import org.ublab.bot.ds.Queue;
+import org.ublab.bot.UblabBot;
 
 import java.io.*;
-import java.net.*;
 
 /**
  * A Thread which is responsible for sending messages to the IRC server.
@@ -42,7 +44,7 @@ public class OutputThread extends Thread {
      * @param bot The underlying UblabBot instance.
      * @param outQueue The Queue from which we will obtain our messages.
      */
-    OutputThread(UblabBot bot, Queue outQueue) {
+    public OutputThread(UblabBot bot, Queue outQueue) {
         _bot = bot;
         _outQueue = outQueue;
         this.setName(this.getClass() + "-Thread");
@@ -59,7 +61,7 @@ public class OutputThread extends Thread {
      * @param encoding The charset to use when encoing this string into a
      *                 byte array.
      */
-    static void sendRawLine(UblabBot bot, BufferedWriter bwriter, String line) {
+    public static void sendRawLine(UblabBot bot, BufferedWriter bwriter, String line) {
         if (line.length() > bot.getMaxLineLength() - 2) {
             line = line.substring(0, bot.getMaxLineLength() - 2);
         }

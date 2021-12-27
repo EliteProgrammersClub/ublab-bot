@@ -17,7 +17,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package org.ublab.bot;
+package org.ublab.bot.dcc;
+
+import org.ublab.bot.UblabBot;
 
 import java.util.*;
 
@@ -33,7 +35,7 @@ public class DccManager {
      * 
      * @param bot The UblabBot whose DCC events this class will handle.
      */
-    DccManager(UblabBot bot) {
+    public DccManager(UblabBot bot) {
         _bot = bot;
     }
     
@@ -43,7 +45,7 @@ public class DccManager {
      * 
      * @return True if the type of request was handled successfully.
      */
-    boolean processRequest(String nick, String login, String hostname, String request) {
+    public boolean processRequest(String nick, String login, String hostname, String request) {
         StringTokenizer tokenizer = new StringTokenizer(request);
         tokenizer.nextToken();
         String type = tokenizer.nextToken();
@@ -147,6 +149,6 @@ public class DccManager {
     
     
     private UblabBot _bot;
-    private Vector _awaitingResume = new Vector();
+    private final Vector _awaitingResume = new Vector();
     
 }

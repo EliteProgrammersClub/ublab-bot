@@ -17,22 +17,20 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package org.ublab.bot;
+package org.ublab.bot.exception;
 
 /**
- * A NickAlreadyInUseException class.  This exception is
- * thrown when the UblabBot attempts to join an IRC server
- * with a user name that is already in use.
+ * An IrcException class.
  *
  */
-public class NickAlreadyInUseException extends IrcException {
+public class IrcException extends Exception {
     
     /**
      * Constructs a new IrcException.
      *
      * @param e The error message to report.
      */
-    public NickAlreadyInUseException(String e) {
+    public IrcException(String e) {
         super(e);
     }
     

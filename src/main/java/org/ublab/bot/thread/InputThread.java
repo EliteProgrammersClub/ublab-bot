@@ -17,7 +17,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package org.ublab.bot;
+package org.ublab.bot.thread;
+
+import org.ublab.bot.UblabBot;
 
 import java.io.*;
 import java.net.*;
@@ -40,11 +42,11 @@ public class InputThread extends Thread {
      * @param breader The BufferedReader that reads lines from the server.
      * @param bwriter The BufferedWriter that sends lines to the server.
      */
-    InputThread(UblabBot bot, Socket socket, BufferedReader breader, BufferedWriter bwriter) {
+    public InputThread(UblabBot bot, Socket socket, BufferedReader breader, BufferedWriter bwriter) {
         _bot = bot;
         _socket = socket;
-        _breader = breader;
-        _bwriter = bwriter;
+        _bufferedReader = breader;
+        _bufferedWriter = bwriter;
         this.setName(this.getClass() + "-Thread");
     }
     
@@ -55,8 +57,8 @@ public class InputThread extends Thread {
      *
      * @param line The raw line to send to the IRC server.
      */
-    void sendRawLine(String line) {
-        OutputThread.sendRawLine(_bot, _bwriter, line);
+    public void sendRawLine(String line) {
+        OutputThread.sendRawLine(_bot, _bufferedWriter, line);
     }
     
     
@@ -67,7 +69,7 @@ public class InputThread extends Thread {
      * 
      * @return True if still connected.
      */
-    boolean isConnected() {
+    public boolean isConnected() {
         return _isConnected;
     }
     
@@ -88,8 +90,8 @@ public class InputThread extends Thread {
             boolean running = true;
             while (running) {
                 try {
-                    String line = null;
-                    while ((line = _breader.readLine()) != null) {
+                    String line;
+                    while ((line = _bufferedReader.readLine()) != null) {
                         try {
                             _bot.handleLine(line);
                         }
@@ -113,6 +115,7 @@ public class InputThread extends Thread {
                         }
                     }
                     if (line == null) {
+                        // TODO verify the logic here to confirm if this condition is required
                         // The server must have disconnected us.
                         running = false;
                     }
@@ -159,10 +162,10 @@ public class InputThread extends Thread {
         }
     }
     
-    private UblabBot _bot = null;
-    private Socket _socket = null;
-    private BufferedReader _breader = null;
-    private BufferedWriter _bwriter = null;
+    private final UblabBot _bot;
+    private final Socket _socket;
+    private final BufferedReader _bufferedReader;
+    private final BufferedWriter _bufferedWriter;
     private boolean _isConnected = true;
     private boolean _disposed = false;
     
