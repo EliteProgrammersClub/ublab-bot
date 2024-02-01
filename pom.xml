@@ -20,8 +20,16 @@
     <developer>
       <name>Nyah Check</name>
     </developer>
+	<developer>
+		<name>Mouliom Fitzgerald</name>
+		<email>mouliofitzgerard@gmail.com</email>
+	</developer>
   </developers>
- 
+
+   <properties>
+      <java.version> 19</java.version>
+   </properties>
+
   <scm>
     <connection>scm:git:git@github.com:EliteProgrammersClub/ublab-bot.git</connection>
     <developerConnection>scm:git:git@github.com:EliteProgrammersClub/ublab-bot.git</developerConnection>
@@ -60,12 +68,14 @@
         		</archive>
       		</configuration>
     	</plugin>
+		
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-antrun-plugin</artifactId>
 			<version>1.1</version>
 			<executions>
    			<execution>
+   				
       			<id>id.validate</id>
       			<phase>validate</phase>
       			<goals>
