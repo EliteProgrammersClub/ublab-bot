@@ -20,7 +20,12 @@
     <developer>
       <name>Nyah Check</name>
     </developer>
+	<developer>
+		<name>Mouliom Fitzgerald</name>
+		<email>mouliofitzgerard@gmail.com</email>
+	</developer>
   </developers>
+
  
   <scm>
     <connection>scm:git:git@github.com:EliteProgrammersClub/ublab-bot.git</connection>
@@ -37,7 +42,7 @@
   <dependency>
   	<groupId>junit</groupId>
   	<artifactId>junit</artifactId>
-  	<version>4.12</version>
+  	<version>4.13.1</version>
   	<scope>test</scope>
   </dependency>
   </dependencies>
@@ -60,12 +65,24 @@
         		</archive>
       		</configuration>
     	</plugin>
+
+		<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.12.1</version>
+    <configuration>
+        <source>19</source>
+		<target>19</target>
+    </configuration>
+     </plugin>
+		
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-antrun-plugin</artifactId>
 			<version>1.1</version>
 			<executions>
    			<execution>
+   				
       			<id>id.validate</id>
       			<phase>validate</phase>
       			<goals>

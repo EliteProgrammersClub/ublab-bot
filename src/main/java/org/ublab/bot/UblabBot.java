@@ -25,128 +25,133 @@ import java.util.*;
 
 /**
  * ublab-bot is a Java framework for writing IRC bots quickly and easily.
- *  <p>
+ * <p>
  * It provides an event-driven architecture to handle common IRC
  * events, flood protection, DCC support, ident support, and more.
  * The comprehensive logfile format is suitable for use with pisg to generate
  * channel statistics.
- *  <p>
+ * <p>
  * Methods of the ublab-bot class can be called to send events to the IRC server
- * that it connects to.  For example, calling the sendMessage method will
- * send a message to a channel or user on the IRC server.  Multiple servers
+ * that it connects to. For example, calling the sendMessage method will
+ * send a message to a channel or user on the IRC server. Multiple servers
  * can be supported using multiple instances of ublab-bot.
- *  <p>
- * To perform an action when the ublab-bot receives a normal message from the IRC
+ * <p>
+ * To perform an action when the ublab-bot receives a normal message from the
+ * IRC
  * server, you would override the onMessage method defined in the ublab-bot
- * class.  All on<i>XYZ</i> methods in the ublab-bot class are automatically called
+ * class. All on<i>XYZ</i> methods in the ublab-bot class are automatically
+ * called
  * when the event <i>XYZ</i> happens, so you would override these if you wish
  * to do something when it does happen.
- *  <p>
+ * <p>
  * Some event methods, such as onPing, should only really perform a specific
- * function (i.e. respond to a PING from the server).  For your convenience, such
+ * function (i.e. respond to a PING from the server). For your convenience, such
  * methods are already correctly implemented in the ublab-bot and should not
- * normally need to be overridden.  Please read the full documentation for each
+ * normally need to be overridden. Please read the full documentation for each
  * method to see which ones are already implemented by the ublab-bot class.
- *  <p>
+ * <p>
  *
  */
 public abstract class UblabBot implements ReplyConstants {
-
 
     /**
      * The definitive version number of this release of ublab-bot.
      * (Note: Change this before automatically building releases)
      */
     public static final String VERSION = "1.5.0";
-    
-    
+
     private static final int OP_ADD = 1;
     private static final int OP_REMOVE = 2;
     private static final int VOICE_ADD = 3;
     private static final int VOICE_REMOVE = 4;
-    
-    
+
     /**
-     * Constructs a ublab-bot with the default settings.  Your own constructors
+     * Constructs a ublab-bot with the default settings. Your own constructors
      * in classes which extend the ublab-bot abstract class should be responsible
      * for changing the default settings if required.
      */
-    public UblabBot() {}
-    
-    
+    public UblabBot() {
+    }
+
     /**
      * Attempt to connect to the specified IRC server.
      * The onConnect method is called upon success.
      *
      * @param hostname The hostname of the server to connect to.
      * 
-     * @throws IOException if it was not possible to connect to the server.
-     * @throws IrcException if the server would not let us join it.
-     * @throws NickAlreadyInUseException if our nick is already in use on the server.
+     * @throws IOException               if it was not possible to connect to the
+     *                                   server.
+     * @throws IrcException              if the server would not let us join it.
+     * @throws NickAlreadyInUseException if our nick is already in use on the
+     *                                   server.
      */
-    public final synchronized void connect(String hostname) throws IOException, IrcException, NickAlreadyInUseException {
+    public final synchronized void connect(String hostname)
+            throws IOException, IrcException, NickAlreadyInUseException {
         this.connect(hostname, 6667, null);
     }
-
 
     /**
      * Attempt to connect to the specified IRC server and port number.
      * The onConnect method is called upon success.
      *
      * @param hostname The hostname of the server to connect to.
-     * @param port The port number to connect to on the server.
+     * @param port     The port number to connect to on the server.
      * 
-     * @throws IOException if it was not possible to connect to the server.
-     * @throws IrcException if the server would not let us join it.
-     * @throws NickAlreadyInUseException if our nick is already in use on the server.
+     * @throws IOException               if it was not possible to connect to the
+     *                                   server.
+     * @throws IrcException              if the server would not let us join it.
+     * @throws NickAlreadyInUseException if our nick is already in use on the
+     *                                   server.
      */
-    public final synchronized void connect(String hostname, int port) throws IOException, IrcException, NickAlreadyInUseException {
+    public final synchronized void connect(String hostname, int port)
+            throws IOException, IrcException, NickAlreadyInUseException {
         this.connect(hostname, port, null);
     }
-    
-    
+
     /**
      * Attempt to connect to the specified IRC server using the supplied
      * password.
      * The onConnect method is called upon success.
      *
      * @param hostname The hostname of the server to connect to.
-     * @param port The port number to connect to on the server.
+     * @param port     The port number to connect to on the server.
      * @param password The password to use to join the server.
      *
-     * @throws IOException if it was not possible to connect to the server.
-     * @throws IrcException if the server would not let us join it.
-     * @throws NickAlreadyInUseException if our nick is already in use on the server.
+     * @throws IOException               if it was not possible to connect to the
+     *                                   server.
+     * @throws IrcException              if the server would not let us join it.
+     * @throws NickAlreadyInUseException if our nick is already in use on the
+     *                                   server.
      */
-    public final synchronized void connect(String hostname, int port, String password) throws IOException, IrcException, NickAlreadyInUseException {
+    public final synchronized void connect(String hostname, int port, String password)
+            throws IOException, IrcException, NickAlreadyInUseException {
 
         _server = hostname;
         _port = port;
         _password = password;
-        
+
         if (isConnected()) {
             throw new IOException("The ublab-bot is already connected to an IRC server.  Disconnect first.");
         }
-        
+
         // Don't clear the outqueue - there might be something important in it!
-        
+
         // Clear everything we may have know about channels.
         this.removeAllChannels();
-        
+
         // Connect to the server.
-        Socket socket =  new Socket(hostname, port);
+        Socket socket = new Socket(hostname, port);
         this.log("*** Connected to server.");
-        
+
         _inetAddress = socket.getLocalAddress();
-        
+
         InputStreamReader inputStreamReader = null;
         OutputStreamWriter outputStreamWriter = null;
         if (getEncoding() != null) {
             // Assume the specified encoding is valid for this JVM.
             inputStreamReader = new InputStreamReader(socket.getInputStream(), getEncoding());
             outputStreamWriter = new OutputStreamWriter(socket.getOutputStream(), getEncoding());
-        }
-        else {
+        } else {
             // Otherwise, just use the JVM's default encoding.
             inputStreamReader = new InputStreamReader(socket.getInputStream());
             outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
@@ -154,7 +159,7 @@ public abstract class UblabBot implements ReplyConstants {
 
         BufferedReader breader = new BufferedReader(inputStreamReader);
         BufferedWriter bwriter = new BufferedWriter(outputStreamWriter);
-        
+
         // Attempt to join the server.
         if (password != null && !password.equals("")) {
             OutputThread.sendRawLine(this, bwriter, "PASS " + password);
@@ -164,68 +169,63 @@ public abstract class UblabBot implements ReplyConstants {
         OutputThread.sendRawLine(this, bwriter, "USER " + this.getLogin() + " 8 * :" + this.getVersion());
 
         _inputThread = new InputThread(this, socket, breader, bwriter);
-        
+
         // Read stuff back from the server to see if we connected.
         String line = null;
         int tries = 1;
         while ((line = breader.readLine()) != null) {
-            
+
             this.handleLine(line);
-            
+
             int firstSpace = line.indexOf(" ");
             int secondSpace = line.indexOf(" ", firstSpace + 1);
             if (secondSpace >= 0) {
                 String code = line.substring(firstSpace + 1, secondSpace);
-           
+
                 if (code.equals("004")) {
                     // We're connected to the server.
                     break;
-                }
-                else if (code.equals("433")) {
+                } else if (code.equals("433")) {
                     if (_autoNickChange) {
                         tries++;
                         nick = getName() + tries;
                         OutputThread.sendRawLine(this, bwriter, "NICK " + nick);
-                    }
-                    else {
+                    } else {
                         socket.close();
                         _inputThread = null;
                         throw new NickAlreadyInUseException(line);
                     }
-                }
-                else if (code.equals("439")) {
+                } else if (code.equals("439")) {
                     // No action required.
-                }
-                else if (code.startsWith("5") || code.startsWith("4")) {
+                } else if (code.startsWith("5") || code.startsWith("4")) {
                     socket.close();
                     _inputThread = null;
                     throw new IrcException("Could not log into the IRC server: " + line);
                 }
             }
             this.setNick(nick);
-            
+
         }
-        
+
         this.log("*** Logged onto server.");
-        
+
         // This makes the socket timeout on read operations after 5 minutes.
         // Maybe in some future version I will let the user change this at runtime.
         socket.setSoTimeout(5 * 60 * 1000);
-        
+
         // Now start the InputThread to read all other lines from the server.
         _inputThread.start();
-        
+
         // Now start the outputThread that will be used to send all messages.
         if (_outputThread == null) {
             _outputThread = new OutputThread(this, _outQueue);
             _outputThread.start();
         }
-        
+
         this.onConnect();
-        
+
     }
-    
-    
+
     /**
      * Reconnects to the IRC server that we were previously connected to.
      * If necessary, the appropriate port number and password will be used.
@@ -234,21 +234,23 @@ public abstract class UblabBot implements ReplyConstants {
      * 
      * @since ublab-bot 0.9.9
      * 
-     * @throws IOException if it was not possible to connect to the server.
-     * @throws IrcException if the server would not let us join it.
-     * @throws NickAlreadyInUseException if our nick is already in use on the server.
+     * @throws IOException               if it was not possible to connect to the
+     *                                   server.
+     * @throws IrcException              if the server would not let us join it.
+     * @throws NickAlreadyInUseException if our nick is already in use on the
+     *                                   server.
      */
-    public final synchronized void reconnect() throws IOException, IrcException, NickAlreadyInUseException{
+    public final synchronized void reconnect() throws IOException, IrcException, NickAlreadyInUseException {
         if (getServer() == null) {
-            throw new IrcException("Cannot reconnect to an IRC server because we were never connected to one previously!");
+            throw new IrcException(
+                    "Cannot reconnect to an IRC server because we were never connected to one previously!");
         }
         connect(getServer(), getPort(), getPassword());
     }
 
-
     /**
      * This method disconnects from the server cleanly by calling the
-     * quitServer() method.  Providing the ublab-bot was connected to an
+     * quitServer() method. Providing the ublab-bot was connected to an
      * IRC server, the onDisconnect() will be called as soon as the
      * disconnection is made by the server.
      *
@@ -258,8 +260,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final synchronized void disconnect() {
         this.quitServer();
     }
-    
-    
+
     /**
      * When you connect to a server and your nick is already in use and
      * this is set to true, a new nick will be automatically chosen.
@@ -272,31 +273,30 @@ public abstract class UblabBot implements ReplyConstants {
     public void setAutoNickChange(boolean autoNickChange) {
         _autoNickChange = autoNickChange;
     }
-    
-    
+
     /**
      * Starts an ident server (Identification Protocol Server, RFC 1413).
-     *  <p>
+     * <p>
      * Most IRC servers attempt to contact the ident server on connecting
-     * hosts in order to determine the user's identity.  A few IRC servers
+     * hosts in order to determine the user's identity. A few IRC servers
      * will not allow you to connect unless this information is provided.
-     *  <p>
+     * <p>
      * So when a ublab-bot is run on a machine that does not run an ident server,
      * it may be necessary to call this method to start one up.
-     *  <p>
+     * <p>
      * Calling this method starts up an ident server which will respond with
      * the login provided by calling getLogin() and then shut down immediately.
      * It will also be shut down if it has not been contacted within 60 seconds
      * of creation.
-     *  <p>
+     * <p>
      * If you require an ident response, then the correct procedure is to start
-     * the ident server and then connect to the IRC server.  The IRC server may
+     * the ident server and then connect to the IRC server. The IRC server may
      * then contact the ident server to get the information it needs.
-     *  <p>
+     * <p>
      * The ident server will fail to start if there is already an ident server
      * running on port 113, or if you are running as an unprivileged user who
      * is unable to create a server socket on that port number.
-     *  <p>
+     * <p>
      * If it is essential for you to use an ident server when connecting to an
      * IRC server, then make sure that port 113 on your machine is visible to
      * the IRC server so that it may contact the ident server.
@@ -307,7 +307,6 @@ public abstract class UblabBot implements ReplyConstants {
         new IdentServer(this, getLogin());
     }
 
-    
     /**
      * Joins a channel.
      * 
@@ -316,18 +315,16 @@ public abstract class UblabBot implements ReplyConstants {
     public final void joinChannel(String channel) {
         this.sendRawLine("JOIN " + channel);
     }
-    
-    
+
     /**
      * Joins a channel with a key.
      * 
      * @param channel The name of the channel to join (eg "#cs").
-     * @param key The key that will be used to join the channel.
+     * @param key     The key that will be used to join the channel.
      */
     public final void joinChannel(String channel, String key) {
         this.joinChannel(channel + " " + key);
     }
-    
 
     /**
      * Parts a channel.
@@ -337,8 +334,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final void partChannel(String channel) {
         this.sendRawLine("PART " + channel);
     }
-    
-    
+
     /**
      * Parts a channel, giving a reason.
      *
@@ -349,7 +345,6 @@ public abstract class UblabBot implements ReplyConstants {
         this.sendRawLine("PART " + channel + " :" + reason);
     }
 
-
     /**
      * Quits from the IRC server.
      * Providing we are actually connected to an IRC server, the
@@ -359,8 +354,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final void quitServer() {
         this.quitServer("");
     }
-    
-    
+
     /**
      * Quits from the IRC server with a reason.
      * Providing we are actually connected to an IRC server, the
@@ -372,8 +366,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final void quitServer(String reason) {
         this.sendRawLine("QUIT :" + reason);
     }
-    
-    
+
     /**
      * Sends a raw line to the IRC server as soon as possible, bypassing the
      * outgoing message queue.
@@ -385,7 +378,7 @@ public abstract class UblabBot implements ReplyConstants {
             _inputThread.sendRawLine(line);
         }
     }
-    
+
     /**
      * Sends a raw line through the outgoing message queue.
      * 
@@ -399,24 +392,26 @@ public abstract class UblabBot implements ReplyConstants {
             _outQueue.add(line);
         }
     }
-    
-    
+
     /**
-     * Sends a message to a channel or a private message to a user.  These
+     * Sends a message to a channel or a private message to a user. These
      * messages are added to the outgoing message queue and sent at the
      * earliest possible opportunity.
-     *  <p>
+     * <p>
      * Some examples: -
-     *  <pre>    // Send the message "Hello!" to the channel #cs.
-     *    sendMessage("#cs", "Hello!");
-     *    
-     *    // Send a private message to Paul that says "Hi".
-     *    sendMessage("Paul", "Hi");</pre>
-     *  
+     * 
+     * <pre>
+     * // Send the message "Hello!" to the channel #cs.
+     * sendMessage("#cs", "Hello!");
+     * 
+     * // Send a private message to Paul that says "Hi".
+     * sendMessage("Paul", "Hi");
+     * </pre>
+     * 
      * You may optionally apply colours, boldness, underlining, etc to
      * the message by using the <code>Colors</code> class.
      *
-     * @param target The name of the channel or user nick to send to.
+     * @param target  The name of the channel or user nick to send to.
      * @param message The message to send.
      * 
      * @see Colors
@@ -424,8 +419,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final void sendMessage(String target, String message) {
         _outQueue.add("PRIVMSG " + target + " :" + message);
     }
-    
-    
+
     /**
      * Sends an action to the channel or to a user.
      *
@@ -437,8 +431,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final void sendAction(String target, String action) {
         sendCTCPCommand(target, "ACTION " + action);
     }
-    
-    
+
     /**
      * Sends a notice to the channel or to a user.
      *
@@ -448,10 +441,9 @@ public abstract class UblabBot implements ReplyConstants {
     public final void sendNotice(String target, String notice) {
         _outQueue.add("NOTICE " + target + " :" + notice);
     }
-    
-    
+
     /**
-     * Sends a CTCP command to a channel or user.  (Client to client protocol).
+     * Sends a CTCP command to a channel or user. (Client to client protocol).
      * Examples of such commands are "PING <number>", "FINGER", "VERSION", etc.
      * For example, if you wish to request the version of a user called "Dave",
      * then you would call <code>sendCTCPCommand("Dave", "VERSION");</code>.
@@ -460,14 +452,13 @@ public abstract class UblabBot implements ReplyConstants {
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param target The name of the channel or user to send the CTCP message to.
+     * @param target  The name of the channel or user to send the CTCP message to.
      * @param command The CTCP command to send.
      */
     public final void sendCTCPCommand(String target, String command) {
         _outQueue.add("PRIVMSG " + target + " :\u0001" + command + "\u0001");
     }
-    
-    
+
     /**
      * Attempt to change the current nick (nickname) of the bot when it
      * is connected to an IRC server.
@@ -479,40 +470,41 @@ public abstract class UblabBot implements ReplyConstants {
     public final void changeNick(String newNick) {
         this.sendRawLine("NICK " + newNick);
     }
-    
-    
+
     /**
      * Identify the bot with NickServ, supplying the appropriate password.
      * Some IRC Networks (such as freenode) require users to <i>register</i> and
      * <i>identify</i> with NickServ before they are able to send private messages
-     * to other users, thus reducing the amount of spam.  If you are using
+     * to other users, thus reducing the amount of spam. If you are using
      * an IRC network where this kind of policy is enforced, you will need
      * to make your bot <i>identify</i> itself to NickServ before you can send
      * private messages. Assuming you have already registered your bot's
      * nick with NickServ, this method can be used to <i>identify</i> with
      * the supplied password. It usually makes sense to identify with NickServ
      * immediately after connecting to a server.
-     *  <p>
+     * <p>
      * This method issues a raw NICKSERV command to the server, and is therefore
      * safer than the alternative approach of sending a private message to
      * NickServ. The latter approach is considered dangerous, as it may cause
      * you to inadvertently transmit your password to an untrusted party if you
      * connect to a network which does not run a NickServ service and where the
-     * untrusted party has assumed the nick "NickServ".  However, if your IRC
+     * untrusted party has assumed the nick "NickServ". However, if your IRC
      * network is only compatible with the private message approach, you may
      * typically identify like so:
-     * <pre>sendMessage("NickServ", "identify PASSWORD");</pre>
+     * 
+     * <pre>
+     * sendMessage("NickServ", "identify PASSWORD");
+     * </pre>
      * 
      * @param password The password which will be used to identify with NickServ.
      */
     public final void identify(String password) {
         this.sendRawLine("NICKSERV IDENTIFY " + password);
-    }                                        
-
+    }
 
     /**
      * Set the mode of a channel.
-     * This method attempts to set the mode of a channel.  This
+     * This method attempts to set the mode of a channel. This
      * may require the bot to have operator status on the channel.
      * For example, if the bot has operator status, we can grant
      * operator status to "Dave" on the #cs channel
@@ -520,7 +512,7 @@ public abstract class UblabBot implements ReplyConstants {
      * An alternative way of doing this would be to use the op method.
      * 
      * @param channel The channel on which to perform the mode change.
-     * @param mode    The new mode to apply to the channel.  This may include
+     * @param mode    The new mode to apply to the channel. This may include
      *                zero or more arguments if necessary.
      * 
      * @see #op(String,String) op
@@ -528,10 +520,9 @@ public abstract class UblabBot implements ReplyConstants {
     public final void setMode(String channel, String mode) {
         this.sendRawLine("MODE " + channel + " " + mode);
     }
-    
-    
+
     /**
-     * Sends an invitation to join a channel.  Some channels can be marked
+     * Sends an invitation to join a channel. Some channels can be marked
      * as "invite-only", so it may be useful to allow a bot to invite people
      * into it.
      * 
@@ -541,37 +532,34 @@ public abstract class UblabBot implements ReplyConstants {
      */
     public final void sendInvite(String nick, String channel) {
         this.sendRawLine("INVITE " + nick + " :" + channel);
-    }    
-
+    }
 
     /**
-     * Bans a user from a channel.  An example of a valid hostmask is
-     * "*!*compu@*.18hp.net".  This may be used in conjunction with the
+     * Bans a user from a channel. An example of a valid hostmask is
+     * "*!*compu@*.18hp.net". This may be used in conjunction with the
      * kick method to permanently remove a user from a channel.
      * Successful use of this method may require the bot to have operator
      * status itself.
      * 
-     * @param channel The channel to ban the user from.
+     * @param channel  The channel to ban the user from.
      * @param hostmask A hostmask representing the user we're banning.
      */
     public final void ban(String channel, String hostmask) {
         this.sendRawLine("MODE " + channel + " +b " + hostmask);
     }
 
-
     /**
-     * Unbans a user from a channel.  An example of a valid hostmask is
+     * Unbans a user from a channel. An example of a valid hostmask is
      * "*!*compu@*.18hp.net".
      * Successful use of this method may require the bot to have operator
      * status itself.
      * 
-     * @param channel The channel to unban the user from.
+     * @param channel  The channel to unban the user from.
      * @param hostmask A hostmask representing the user we're unbanning.
      */
     public final void unBan(String channel, String hostmask) {
         this.sendRawLine("MODE " + channel + " -b " + hostmask);
     }
-
 
     /**
      * Grants operator privilidges to a user on a channel.
@@ -579,12 +567,11 @@ public abstract class UblabBot implements ReplyConstants {
      * status itself.
      * 
      * @param channel The channel we're opping the user on.
-     * @param nick The nick of the user we are opping.
+     * @param nick    The nick of the user we are opping.
      */
     public final void op(String channel, String nick) {
         this.setMode(channel, "+o " + nick);
     }
-
 
     /**
      * Removes operator privilidges from a user on a channel.
@@ -592,25 +579,23 @@ public abstract class UblabBot implements ReplyConstants {
      * status itself.
      * 
      * @param channel The channel we're deopping the user on.
-     * @param nick The nick of the user we are deopping.
+     * @param nick    The nick of the user we are deopping.
      */
     public final void deOp(String channel, String nick) {
         this.setMode(channel, "-o " + nick);
     }
-    
-    
+
     /**
      * Grants voice privilidges to a user on a channel.
      * Successful use of this method may require the bot to have operator
      * status itself.
      * 
      * @param channel The channel we're voicing the user on.
-     * @param nick The nick of the user we are voicing.
+     * @param nick    The nick of the user we are voicing.
      */
     public final void voice(String channel, String nick) {
         this.setMode(channel, "+v " + nick);
     }
-
 
     /**
      * Removes voice privilidges from a user on a channel.
@@ -618,16 +603,15 @@ public abstract class UblabBot implements ReplyConstants {
      * status itself.
      * 
      * @param channel The channel we're devoicing the user on.
-     * @param nick The nick of the user we are devoicing.
+     * @param nick    The nick of the user we are devoicing.
      */
     public final void deVoice(String channel, String nick) {
         this.setMode(channel, "-v " + nick);
     }
 
-
     /**
      * Set the topic for a channel.
-     * This method attempts to set the topic of a channel.  This
+     * This method attempts to set the topic of a channel. This
      * may require the bot to have operator status if the topic
      * is protected.
      * 
@@ -638,7 +622,6 @@ public abstract class UblabBot implements ReplyConstants {
     public final void setTopic(String channel, String topic) {
         this.sendRawLine("TOPIC " + channel + " :" + topic);
     }
-
 
     /**
      * Kicks a user from a channel.
@@ -652,7 +635,6 @@ public abstract class UblabBot implements ReplyConstants {
         this.kick(channel, nick, "");
     }
 
-
     /**
      * Kicks a user from a channel, giving a reason.
      * This method attempts to kick a user from a channel and
@@ -665,8 +647,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final void kick(String channel, String nick, String reason) {
         this.sendRawLine("KICK " + channel + " " + nick + " :" + reason);
     }
-    
-    
+
     /**
      * Issues a request for a list of all channels on the IRC server.
      * When the ublab-bot receives information for each channel, it will
@@ -678,17 +659,16 @@ public abstract class UblabBot implements ReplyConstants {
     public final void listChannels() {
         this.listChannels(null);
     }
-    
-    
+
     /**
      * Issues a request for a list of all channels on the IRC server.
      * When the ublab-bot receives information for each channel, it will
      * call the onChannelInfo method, which you will need to override
      * if you want it to do anything useful.
-     *  <p>
+     * <p>
      * Some IRC servers support certain parameters for LIST requests.
      * One example is a parameter of ">10" to list only those channels
-     * that have more than 10 users in them.  Whether these parameters
+     * that have more than 10 users in them. Whether these parameters
      * are supported or not will depend on the IRC server software.
      * 
      * @param parameters The parameters to supply when requesting the
@@ -699,27 +679,25 @@ public abstract class UblabBot implements ReplyConstants {
     public final void listChannels(String parameters) {
         if (parameters == null) {
             this.sendRawLine("LIST");
-        }
-        else {
+        } else {
             this.sendRawLine("LIST " + parameters);
         }
     }
-    
-    
+
     /**
-     * Sends a file to another user.  Resuming is supported.
+     * Sends a file to another user. Resuming is supported.
      * The other user must be able to connect directly to your bot to be
      * able to receive the file.
-     *  <p>
+     * <p>
      * You may throttle the speed of this file transfer by calling the
      * setPacketDelay method on the DccFileTransfer that is returned.
-     *  <p>
+     * <p>
      * This method may not be overridden.
      * 
      * @since 0.9c
      * 
-     * @param file The file to send.
-     * @param nick The user to whom the file is to be sent.
+     * @param file    The file to send.
+     * @param nick    The user to whom the file is to be sent.
      * @param timeout The number of milliseconds to wait for the recipient to
      *                acccept the file (we recommend about 120000).
      * 
@@ -733,40 +711,39 @@ public abstract class UblabBot implements ReplyConstants {
         transfer.doSend(true);
         return transfer;
     }
-    
-    
+
     /**
      * Receives a file that is being sent to us by a DCC SEND request.
      * Please use the onIncomingFileTransfer method to receive files.
      * 
-     * @deprecated As of ublab-bot 1.2.0, use {@link #onIncomingFileTransfer(DccFileTransfer)}
+     * @deprecated As of ublab-bot 1.2.0, use
+     *             {@link #onIncomingFileTransfer(DccFileTransfer)}
      */
     protected final void dccReceiveFile(File file, long address, int port, int size) {
         throw new RuntimeException("dccReceiveFile is deprecated, please use sendFile");
     }
-    
-    
+
     /**
-     * Attempts to establish a DCC CHAT session with a client.  This method
+     * Attempts to establish a DCC CHAT session with a client. This method
      * issues the connection request to the client and then waits for the
-     * client to respond.  If the connection is successfully made, then a
-     * DccChat object is returned by this method.  If the connection is not
+     * client to respond. If the connection is successfully made, then a
+     * DccChat object is returned by this method. If the connection is not
      * made within the time limit specified by the timeout value, then null
      * is returned.
-     *  <p>
+     * <p>
      * It is <b>strongly recommended</b> that you call this method within a new
      * Thread, as it may take a long time to return.
-     *  <p>
+     * <p>
      * This method may not be overridden.
      * 
      * @since ublab-bot 0.9.8
      *
-     * @param nick The nick of the user we are trying to establish a chat with.
+     * @param nick    The nick of the user we are trying to establish a chat with.
      * @param timeout The number of milliseconds to wait for the recipient to
      *                accept the chat connection (we recommend about 120000).
      * 
      * @return a DccChat object that can be used to send and recieve lines of
-     *         text.  Returns <b>null</b> if the connection could not be made.
+     *         text. Returns <b>null</b> if the connection could not be made.
      * 
      * @see DccChat
      */
@@ -774,20 +751,18 @@ public abstract class UblabBot implements ReplyConstants {
         DccChat chat = null;
         try {
             ServerSocket ss = null;
-            
+
             int[] ports = getDccPorts();
             if (ports == null) {
                 // Use any free port.
                 ss = new ServerSocket(0);
-            }
-            else {
+            } else {
                 for (int i = 0; i < ports.length; i++) {
                     try {
                         ss = new ServerSocket(ports[i]);
                         // Found a port number we could use.
                         break;
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         // Do nothing; go round and try another port.
                     }
                 }
@@ -796,58 +771,56 @@ public abstract class UblabBot implements ReplyConstants {
                     throw new IOException("All ports returned by getDccPorts() are in use.");
                 }
             }
-            
+
             ss.setSoTimeout(timeout);
             int port = ss.getLocalPort();
-            
+
             InetAddress inetAddress = getDccInetAddress();
             if (inetAddress == null) {
                 inetAddress = getInetAddress();
             }
             byte[] ip = inetAddress.getAddress();
             long ipNum = ipToLong(ip);
-            
+
             sendCTCPCommand(nick, "DCC CHAT chat " + ipNum + " " + port);
-            
+
             // The client may now connect to us to chat.
             Socket socket = ss.accept();
-            
+
             // Close the server socket now that we've finished with it.
             ss.close();
-            
+
             chat = new DccChat(this, nick, socket);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // Do nothing.
         }
         return chat;
     }
 
-    
     /**
      * Attempts to accept a DCC CHAT request by a client.
      * Please use the onIncomingChatRequest method to receive files.
      * 
-     * @deprecated As of ublab-bot 1.2.0, use {@link #onIncomingChatRequest(DccChat)}
+     * @deprecated As of ublab-bot 1.2.0, use
+     *             {@link #onIncomingChatRequest(DccChat)}
      */
     protected final DccChat dccAcceptChatRequest(String sourceNick, long address, int port) {
         throw new RuntimeException("dccAcceptChatRequest is deprecated, please use onIncomingChatRequest");
     }
 
-
     /**
-     * Adds a line to the log.  This log is currently output to the standard
+     * Adds a line to the log. This log is currently output to the standard
      * output and is in the correct format for use by tools such as pisg, the
-     * Perl IRC Statistics Generator.  You may override this method if you wish
+     * Perl IRC Statistics Generator. You may override this method if you wish
      * to do something else with log entries.
      * Each line in the log begins with a number which
      * represents the logging time (as the number of milliseconds since the
-     * epoch).  This timestamp and the following log entry are separated by
-     * a single space character, " ".  Outgoing messages are distinguishable
+     * epoch). This timestamp and the following log entry are separated by
+     * a single space character, " ". Outgoing messages are distinguishable
      * by a log entry that has ">>>" immediately following the space character
-     * after the timestamp.  DCC events use "+++" and warnings about unhandled
+     * after the timestamp. DCC events use "+++" and warnings about unhandled
      * Exceptions and Errors use "###".
-     *  <p>
+     * <p>
      * This implementation of the method will only cause log entries to be
      * output if the ublab-bot has had its verbose mode turned on by calling
      * setVerbose(true);
@@ -860,12 +833,11 @@ public abstract class UblabBot implements ReplyConstants {
         }
     }
 
-
     /**
      * This method handles events when any line of text arrives from the server,
-     * then calling the appropriate method in the ublab-bot.  This method is
+     * then calling the appropriate method in the ublab-bot. This method is
      * protected and only called by the InputThread for this instance.
-     *  <p>
+     * <p>
      * This method may not be overridden!
      * 
      * @param line The raw line of text from the server.
@@ -896,45 +868,42 @@ public abstract class UblabBot implements ReplyConstants {
                 sourceNick = senderInfo.substring(1, exclamation);
                 sourceLogin = senderInfo.substring(exclamation + 1, at);
                 sourceHostname = senderInfo.substring(at + 1);
-            }
-            else {
-                
+            } else {
+
                 if (tokenizer.hasMoreTokens()) {
                     String token = command;
 
                     int code = -1;
                     try {
                         code = Integer.parseInt(token);
-                    }
-                    catch (NumberFormatException e) {
+                    } catch (NumberFormatException e) {
                         // Keep the existing value.
                     }
-                    
+
                     if (code != -1) {
                         String errorStr = token;
-                        String response = line.substring(line.indexOf(errorStr, senderInfo.length()) + 4, line.length());
+                        String response = line.substring(line.indexOf(errorStr, senderInfo.length()) + 4,
+                                line.length());
                         this.processServerResponse(code, response);
                         // Return from the method.
                         return;
-                    }
-                    else {
+                    } else {
                         // This is not a server response.
                         // It must be a nick without login and hostname.
                         // (or maybe a NOTICE or suchlike from the server)
                         sourceNick = senderInfo;
                         target = token;
                     }
-                }
-                else {
+                } else {
                     // We don't know what this line means.
                     this.onUnknown(line);
                     // Return from the method;
                     return;
                 }
-                
+
             }
         }
-        
+
         command = command.toUpperCase();
         if (sourceNick.startsWith(":")) {
             sourceNick = sourceNick.substring(1);
@@ -952,59 +921,49 @@ public abstract class UblabBot implements ReplyConstants {
             if (request.equals("VERSION")) {
                 // VERSION request
                 this.onVersion(sourceNick, sourceLogin, sourceHostname, target);
-            }
-            else if (request.startsWith("ACTION ")) {
+            } else if (request.startsWith("ACTION ")) {
                 // ACTION request
                 this.onAction(sourceNick, sourceLogin, sourceHostname, target, request.substring(7));
-            }
-            else if (request.startsWith("PING ")) {
+            } else if (request.startsWith("PING ")) {
                 // PING request
                 this.onPing(sourceNick, sourceLogin, sourceHostname, target, request.substring(5));
-            }
-            else if (request.equals("TIME")) {
+            } else if (request.equals("TIME")) {
                 // TIME request
                 this.onTime(sourceNick, sourceLogin, sourceHostname, target);
-            }
-            else if (request.equals("FINGER")) {
+            } else if (request.equals("FINGER")) {
                 // FINGER request
                 this.onFinger(sourceNick, sourceLogin, sourceHostname, target);
-            }
-            else if ((tokenizer = new StringTokenizer(request)).countTokens() >= 5 && tokenizer.nextToken().equals("DCC")) {
+            } else if ((tokenizer = new StringTokenizer(request)).countTokens() >= 5
+                    && tokenizer.nextToken().equals("DCC")) {
                 // This is a DCC request.
                 boolean success = _dccManager.processRequest(sourceNick, sourceLogin, sourceHostname, request);
                 if (!success) {
                     // The DccManager didn't know what to do with the line.
                     this.onUnknown(line);
                 }
-            }
-            else {            
+            } else {
                 // An unknown CTCP message - ignore it.
                 this.onUnknown(line);
             }
-        }
-        else if (command.equals("PRIVMSG") && _channelPrefixes.indexOf(target.charAt(0)) >= 0) {
+        } else if (command.equals("PRIVMSG") && _channelPrefixes.indexOf(target.charAt(0)) >= 0) {
             // This is a normal message to a channel.
             this.onMessage(target, sourceNick, sourceLogin, sourceHostname, line.substring(line.indexOf(" :") + 2));
-        }
-        else if (command.equals("PRIVMSG")) {
+        } else if (command.equals("PRIVMSG")) {
             // This is a private message to us.
             this.onPrivateMessage(sourceNick, sourceLogin, sourceHostname, line.substring(line.indexOf(" :") + 2));
-        }
-        else if (command.equals("JOIN")) {
+        } else if (command.equals("JOIN")) {
             // Someone is joining a channel.
             String channel = target;
             this.addUser(channel, new User("", sourceNick));
             this.onJoin(channel, sourceNick, sourceLogin, sourceHostname);
-        }
-        else if (command.equals("PART")) {
+        } else if (command.equals("PART")) {
             // Someone is parting from a channel.
             this.removeUser(target, sourceNick);
             if (sourceNick.equals(this.getNick())) {
                 this.removeChannel(target);
             }
             this.onPart(target, sourceNick, sourceLogin, sourceHostname);
-        }
-        else if (command.equals("NICK")) {
+        } else if (command.equals("NICK")) {
             // Somebody is changing their nick.
             String newNick = target;
             this.renameUser(sourceNick, newNick);
@@ -1013,102 +972,94 @@ public abstract class UblabBot implements ReplyConstants {
                 this.setNick(newNick);
             }
             this.onNickChange(sourceNick, sourceLogin, sourceHostname, newNick);
-        }
-        else if (command.equals("NOTICE")) {
+        } else if (command.equals("NOTICE")) {
             // Someone is sending a notice.
             this.onNotice(sourceNick, sourceLogin, sourceHostname, target, line.substring(line.indexOf(" :") + 2));
-        }
-        else if (command.equals("QUIT")) {
+        } else if (command.equals("QUIT")) {
             // Someone has quit from the IRC server.
             if (sourceNick.equals(this.getNick())) {
                 this.removeAllChannels();
-            }
-            else {
+            } else {
                 this.removeUser(sourceNick);
             }
             this.onQuit(sourceNick, sourceLogin, sourceHostname, line.substring(line.indexOf(" :") + 2));
-        }
-        else if (command.equals("KICK")) {
+        } else if (command.equals("KICK")) {
             // Somebody has been kicked from a channel.
             String recipient = tokenizer.nextToken();
             if (recipient.equals(this.getNick())) {
                 this.removeChannel(target);
             }
             this.removeUser(target, recipient);
-            this.onKick(target, sourceNick, sourceLogin, sourceHostname, recipient, line.substring(line.indexOf(" :") + 2));
-        }
-        else if (command.equals("MODE")) {
+            this.onKick(target, sourceNick, sourceLogin, sourceHostname, recipient,
+                    line.substring(line.indexOf(" :") + 2));
+        } else if (command.equals("MODE")) {
             // Somebody is changing the mode on a channel or user.
             String mode = line.substring(line.indexOf(target, 2) + target.length() + 1);
             if (mode.startsWith(":")) {
                 mode = mode.substring(1);
             }
             this.processMode(target, sourceNick, sourceLogin, sourceHostname, mode);
-        }
-        else if (command.equals("TOPIC")) {
+        } else if (command.equals("TOPIC")) {
             // Someone is changing the topic.
             this.onTopic(target, line.substring(line.indexOf(" :") + 2), sourceNick, System.currentTimeMillis(), true);
-        }
-        else if (command.equals("INVITE")) {
+        } else if (command.equals("INVITE")) {
             // Somebody is inviting somebody else into a channel.
             this.onInvite(target, sourceNick, sourceLogin, sourceHostname, line.substring(line.indexOf(" :") + 2));
-        }
-        else {
+        } else {
             // If we reach this point, then we've found something that the ublab-bot
             // Doesn't currently deal with.
             this.onUnknown(line);
         }
-        
+
     }
-    
-    
+
     /**
      * This method is called once the ublab-bot has successfully connected to
      * the IRC server.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.6
      */
-    protected void onConnect() {}
-    
-    
+    protected void onConnect() {
+    }
+
     /**
      * This method carries out the actions to be performed when the ublab-bot
-     * gets disconnected.  This may happen if the ublab-bot quits from the
+     * gets disconnected. This may happen if the ublab-bot quits from the
      * server, or if the connection is unexpectedly lost.
-     *  <p>
+     * <p>
      * Disconnection from the IRC server is detected immediately if either
      * we or the server close the connection normally. If the connection to
      * the server is lost, but neither we nor the server have explicitly closed
      * the connection, then it may take a few minutes to detect (this is
      * commonly referred to as a "ping timeout").
-     *  <p>
+     * <p>
      * If you wish to get your IRC bot to automatically rejoin a server after
      * the connection has been lost, then this is probably the ideal method to
      * override to implement such functionality.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      */
-    protected void onDisconnect() {}
-    
-    
+    protected void onDisconnect() {
+    }
+
     /**
      * This method is called by the ublab-bot when a numeric response
-     * is received from the IRC server.  We use this method to
+     * is received from the IRC server. We use this method to
      * allow ublab-bot to process various responses from the server
      * before then passing them on to the onServerResponse method.
-     *  <p>
+     * <p>
      * Note that this method is private and should not appear in any
      * of the javadoc generated documenation.
      * 
-     * @param code The three-digit numerical code for the response.
+     * @param code     The three-digit numerical code for the response.
      * @param response The full response from the IRC server.
      */
     private final void processServerResponse(int code, String response) {
-        
+
         if (code == RPL_LIST) {
             // This is a bit of information about a channel.
             int firstSpace = response.indexOf(' ');
@@ -1119,27 +1070,24 @@ public abstract class UblabBot implements ReplyConstants {
             int userCount = 0;
             try {
                 userCount = Integer.parseInt(response.substring(secondSpace + 1, thirdSpace));
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 // Stick with the value of zero.
             }
             String topic = response.substring(colon + 1);
             this.onChannelInfo(channel, userCount, topic);
-        }
-        else if (code == RPL_TOPIC) {
+        } else if (code == RPL_TOPIC) {
             // This is topic information about a channel we've just joined.
             int firstSpace = response.indexOf(' ');
             int secondSpace = response.indexOf(' ', firstSpace + 1);
             int colon = response.indexOf(':');
             String channel = response.substring(firstSpace + 1, secondSpace);
             String topic = response.substring(colon + 1);
-            
+
             _topics.put(channel, topic);
-            
+
             // For backwards compatibility only - this onTopic method is deprecated.
             this.onTopic(channel, topic);
-        }
-        else if (code == RPL_TOPICINFO) {
+        } else if (code == RPL_TOPICINFO) {
             StringTokenizer tokenizer = new StringTokenizer(response);
             tokenizer.nextToken();
             String channel = tokenizer.nextToken();
@@ -1147,21 +1095,19 @@ public abstract class UblabBot implements ReplyConstants {
             long date = 0;
             try {
                 date = Long.parseLong(tokenizer.nextToken()) * 1000;
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 // Stick with the default value of zero.
             }
-            
+
             String topic = (String) _topics.get(channel);
             _topics.remove(channel);
-            
+
             this.onTopic(channel, topic, setBy, date, false);
-        }
-        else if (code == RPL_NAMREPLY) {
+        } else if (code == RPL_NAMREPLY) {
             // This is a list of nicks in a channel that we've just joined.
             int channelEndIndex = response.indexOf(" :");
             String channel = response.substring(response.lastIndexOf(' ', channelEndIndex - 1) + 1, channelEndIndex);
-            
+
             StringTokenizer tokenizer = new StringTokenizer(response.substring(response.indexOf(" :") + 2));
             while (tokenizer.hasMoreTokens()) {
                 String nick = tokenizer.nextToken();
@@ -1169,42 +1115,38 @@ public abstract class UblabBot implements ReplyConstants {
                 if (nick.startsWith("@")) {
                     // User is an operator in this channel.
                     prefix = "@";
-                }
-                else if (nick.startsWith("+")) {
+                } else if (nick.startsWith("+")) {
                     // User is voiced in this channel.
                     prefix = "+";
-                }
-                else if (nick.startsWith(".")) {
+                } else if (nick.startsWith(".")) {
                     // Some wibbly status I've never seen before...
                     prefix = ".";
                 }
                 nick = nick.substring(prefix.length());
                 this.addUser(channel, new User(prefix, nick));
             }
-        }
-        else if (code == RPL_ENDOFNAMES) {
+        } else if (code == RPL_ENDOFNAMES) {
             // This is the end of a NAMES list, so we know that we've got
-            // the full list of users in the channel that we just joined. 
+            // the full list of users in the channel that we just joined.
             String channel = response.substring(response.indexOf(' ') + 1, response.indexOf(" :"));
             User[] users = this.getUsers(channel);
             this.onUserList(channel, users);
         }
-        
+
         this.onServerResponse(code, response);
     }
-
 
     /**
      * This method is called when we receive a numeric response from the
      * IRC server.
-     *  <p> 
+     * <p>
      * Numerics in the range from 001 to 099 are used for client-server
-     * connections only and should never travel between servers.  Replies
+     * connections only and should never travel between servers. Replies
      * generated in response to commands are found in the range from 200
-     * to 399.  Error replies are found in the range from 400 to 599.
-     *  <p>
+     * to 399. Error replies are found in the range from 400 to 599.
+     * <p>
      * For example, we can use this method to discover the topic of a
-     * channel when we join it.  If we join the channel #test which
+     * channel when we join it. If we join the channel #test which
      * has a topic of &quot;I am King of Test&quot; then the response
      * will be &quot;<code>ublab-bot #test :I Am King of Test</code>&quot;
      * with a code of 332 to signify that this is a topic.
@@ -1212,906 +1154,931 @@ public abstract class UblabBot implements ReplyConstants {
      * <code>onTopic</code> method is an easier way of finding the
      * topic for a channel). Check the IRC RFC for the full list of other
      * command response codes.
-     *  <p>
+     * <p>
      * ublab-bot implements the interface ReplyConstants, which contains
      * contstants that you may find useful here.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
-     * @param code The three-digit numerical code for the response.
+     * @param code     The three-digit numerical code for the response.
      * @param response The full response from the IRC server.
      * 
      * @see ReplyConstants
      */
-    protected void onServerResponse(int code, String response) {}
-    
-    
+    protected void onServerResponse(int code, String response) {
+    }
+
     /**
      * This method is called when we receive a user list from the server
      * after joining a channel.
-     *  <p>
+     * <p>
      * Shortly after joining a channel, the IRC server sends a list of all
      * users in that channel. The ublab-bot collects this information and
      * calls this method as soon as it has the full list.
-     *  <p>
+     * <p>
      * To obtain the nick of each user in the channel, call the getNick()
      * method on each User object in the array.
-     *  <p>
+     * <p>
      * At a later time, you may call the getUsers method to obtain an
      * up to date list of the users in the channel.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 1.0.0
      * 
      * @param channel The name of the channel.
-     * @param users An array of User objects belonging to this channel.
+     * @param users   An array of User objects belonging to this channel.
      * 
      * @see User
      */
-    protected void onUserList(String channel, User[] users) {}
-    
-    
+    protected void onUserList(String channel, User[] users) {
+    }
+
     /**
      * This method is called whenever a message is sent to a channel.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
-     * @param channel The channel to which the message was sent.
-     * @param sender The nick of the person who sent the message.
-     * @param login The login of the person who sent the message.
+     * @param channel  The channel to which the message was sent.
+     * @param sender   The nick of the person who sent the message.
+     * @param login    The login of the person who sent the message.
      * @param hostname The hostname of the person who sent the message.
-     * @param message The actual message sent to the channel.
+     * @param message  The actual message sent to the channel.
      */
-    protected void onMessage(String channel, String sender, String login, String hostname, String message) {}
-
+    protected void onMessage(String channel, String sender, String login, String hostname, String message) {
+    }
 
     /**
      * This method is called whenever a private message is sent to the ublab-bot.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
-     * @param sender The nick of the person who sent the private message.
-     * @param login The login of the person who sent the private message.
+     * @param sender   The nick of the person who sent the private message.
+     * @param login    The login of the person who sent the private message.
      * @param hostname The hostname of the person who sent the private message.
-     * @param message The actual message.
+     * @param message  The actual message.
      */
-    protected void onPrivateMessage(String sender, String login, String hostname, String message) {}
-    
-    
+    protected void onPrivateMessage(String sender, String login, String hostname, String message) {
+    }
+
     /**
-     * This method is called whenever an ACTION is sent from a user.  E.g.
+     * This method is called whenever an ACTION is sent from a user. E.g.
      * such events generated by typing "/me goes shopping" in most IRC clients.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
-     * @param sender The nick of the user that sent the action.
-     * @param login The login of the user that sent the action.
+     * @param sender   The nick of the user that sent the action.
+     * @param login    The login of the user that sent the action.
      * @param hostname The hostname of the user that sent the action.
-     * @param target The target of the action, be it a channel or our nick.
-     * @param action The action carried out by the user.
+     * @param target   The target of the action, be it a channel or our nick.
+     * @param action   The action carried out by the user.
      */
-    protected void onAction(String sender, String login, String hostname, String target, String action) {}
-    
-    
+    protected void onAction(String sender, String login, String hostname, String target, String action) {
+    }
+
     /**
      * This method is called whenever we receive a notice.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
-     * @param sourceNick The nick of the user that sent the notice.
-     * @param sourceLogin The login of the user that sent the notice.
+     * @param sourceNick     The nick of the user that sent the notice.
+     * @param sourceLogin    The login of the user that sent the notice.
      * @param sourceHostname The hostname of the user that sent the notice.
-     * @param target The target of the notice, be it our nick or a channel name.
-     * @param notice The notice message.
+     * @param target         The target of the notice, be it our nick or a channel
+     *                       name.
+     * @param notice         The notice message.
      */
-    protected void onNotice(String sourceNick, String sourceLogin, String sourceHostname, String target, String notice) {}
-    
-    
+    protected void onNotice(String sourceNick, String sourceLogin, String sourceHostname, String target,
+            String notice) {
+    }
+
     /**
      * This method is called whenever someone (possibly us) joins a channel
      * which we are on.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
-     * @param channel The channel which somebody joined.
-     * @param sender The nick of the user who joined the channel.
-     * @param login The login of the user who joined the channel.
+     * @param channel  The channel which somebody joined.
+     * @param sender   The nick of the user who joined the channel.
+     * @param login    The login of the user who joined the channel.
      * @param hostname The hostname of the user who joined the channel.
      */
-    protected void onJoin(String channel, String sender, String login, String hostname) {}
-    
-    
+    protected void onJoin(String channel, String sender, String login, String hostname) {
+    }
+
     /**
      * This method is called whenever someone (possibly us) parts a channel
      * which we are on.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
-     * @param channel The channel which somebody parted from.
-     * @param sender The nick of the user who parted from the channel.
-     * @param login The login of the user who parted from the channel.
+     * @param channel  The channel which somebody parted from.
+     * @param sender   The nick of the user who parted from the channel.
+     * @param login    The login of the user who parted from the channel.
      * @param hostname The hostname of the user who parted from the channel.
      */
-    protected void onPart(String channel, String sender, String login, String hostname) {}
-
+    protected void onPart(String channel, String sender, String login, String hostname) {
+    }
 
     /**
      * This method is called whenever someone (possibly us) changes nick on any
      * of the channels that we are on.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
-     * @param oldNick The old nick.
-     * @param login The login of the user.
+     * @param oldNick  The old nick.
+     * @param login    The login of the user.
      * @param hostname The hostname of the user.
-     * @param newNick The new nick.
+     * @param newNick  The new nick.
      */
-    protected void onNickChange(String oldNick, String login, String hostname, String newNick) {}
-    
-    
+    protected void onNickChange(String oldNick, String login, String hostname, String newNick) {
+    }
+
     /**
      * This method is called whenever someone (possibly us) is kicked from
      * any of the channels that we are in.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
-     * @param channel The channel from which the recipient was kicked.
-     * @param kickerNick The nick of the user who performed the kick.
-     * @param kickerLogin The login of the user who performed the kick.
+     * @param channel        The channel from which the recipient was kicked.
+     * @param kickerNick     The nick of the user who performed the kick.
+     * @param kickerLogin    The login of the user who performed the kick.
      * @param kickerHostname The hostname of the user who performed the kick.
-     * @param recipientNick The unfortunate recipient of the kick.
-     * @param reason The reason given by the user who performed the kick.
+     * @param recipientNick  The unfortunate recipient of the kick.
+     * @param reason         The reason given by the user who performed the kick.
      */
-    protected void onKick(String channel, String kickerNick, String kickerLogin, String kickerHostname, String recipientNick, String reason) {}
-    
-    
+    protected void onKick(String channel, String kickerNick, String kickerLogin, String kickerHostname,
+            String recipientNick, String reason) {
+    }
+
     /**
      * This method is called whenever someone (possibly us) quits from the
-     * server.  We will only observe this if the user was in one of the
+     * server. We will only observe this if the user was in one of the
      * channels to which we are connected.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
-     * @param sourceNick The nick of the user that quit from the server.
-     * @param sourceLogin The login of the user that quit from the server.
+     * @param sourceNick     The nick of the user that quit from the server.
+     * @param sourceLogin    The login of the user that quit from the server.
      * @param sourceHostname The hostname of the user that quit from the server.
-     * @param reason The reason given for quitting the server.
+     * @param reason         The reason given for quitting the server.
      */
-    protected void onQuit(String sourceNick, String sourceLogin, String sourceHostname, String reason) {}
-    
-    
-    /**
-     * This method is called whenever a user sets the topic, or when
-     * ublab-bot joins a new channel and discovers its topic.
-     *  <p>
-     * The implementation of this method in the ublab-bot abstract class
-     * performs no actions and may be overridden as required.
-     *
-     * @param channel The channel that the topic belongs to.
-     * @param topic The topic for the channel.
-     * 
-     * @deprecated As of 1.2.0, replaced by {@link #onTopic(String,String,String,long,boolean)}
-     */
-    protected void onTopic(String channel, String topic) {}
-    
+    protected void onQuit(String sourceNick, String sourceLogin, String sourceHostname, String reason) {
+    }
 
     /**
      * This method is called whenever a user sets the topic, or when
      * ublab-bot joins a new channel and discovers its topic.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
      * @param channel The channel that the topic belongs to.
-     * @param topic The topic for the channel.
-     * @param setBy The nick of the user that set the topic.
-     * @param date When the topic was set (milliseconds since the epoch).
+     * @param topic   The topic for the channel.
+     * 
+     * @deprecated As of 1.2.0, replaced by
+     *             {@link #onTopic(String,String,String,long,boolean)}
+     */
+    protected void onTopic(String channel, String topic) {
+    }
+
+    /**
+     * This method is called whenever a user sets the topic, or when
+     * ublab-bot joins a new channel and discovers its topic.
+     * <p>
+     * The implementation of this method in the ublab-bot abstract class
+     * performs no actions and may be overridden as required.
+     *
+     * @param channel The channel that the topic belongs to.
+     * @param topic   The topic for the channel.
+     * @param setBy   The nick of the user that set the topic.
+     * @param date    When the topic was set (milliseconds since the epoch).
      * @param changed True if the topic has just been changed, false if
      *                the topic was already there.
      * 
      */
-    protected void onTopic(String channel, String topic, String setBy, long date, boolean changed) {}
-    
-    
+    protected void onTopic(String channel, String topic, String setBy, long date, boolean changed) {
+    }
+
     /**
      * After calling the listChannels() method in ublab-bot, the server
      * will start to send us information about each channel on the
-     * server.  You may override this method in order to receive the
+     * server. You may override this method in order to receive the
      * information about each channel as soon as it is received.
-     *  <p>
+     * <p>
      * Note that certain channels, such as those marked as hidden,
      * may not appear in channel listings.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
-     * @param channel The name of the channel.
+     * @param channel   The name of the channel.
      * @param userCount The number of users visible in this channel.
-     * @param topic The topic for this channel.
+     * @param topic     The topic for this channel.
      * 
      * @see #listChannels() listChannels
      */
-    protected void onChannelInfo(String channel, int userCount, String topic) {}
-      
-    
+    protected void onChannelInfo(String channel, int userCount, String topic) {
+    }
+
     /**
-     * Called when the mode of a channel is set.  We process this in
+     * Called when the mode of a channel is set. We process this in
      * order to call the appropriate onOp, onDeop, etc method before
      * finally calling the override-able onMode method.
-     *  <p>
+     * <p>
      * Note that this method is private and is not intended to appear
      * in the javadoc generated documentation.
      *
-     * @param target The channel or nick that the mode operation applies to.
-     * @param sourceNick The nick of the user that set the mode.
-     * @param sourceLogin The login of the user that set the mode.
+     * @param target         The channel or nick that the mode operation applies to.
+     * @param sourceNick     The nick of the user that set the mode.
+     * @param sourceLogin    The login of the user that set the mode.
      * @param sourceHostname The hostname of the user that set the mode.
-     * @param mode  The mode that has been set.
+     * @param mode           The mode that has been set.
      */
-    private final void processMode(String target, String sourceNick, String sourceLogin, String sourceHostname, String mode) {
-        
+    private final void processMode(String target, String sourceNick, String sourceLogin, String sourceHostname,
+            String mode) {
+
         if (_channelPrefixes.indexOf(target.charAt(0)) >= 0) {
             // The mode of a channel is being changed.
             String channel = target;
             StringTokenizer tok = new StringTokenizer(mode);
             String[] params = new String[tok.countTokens()];
-     
+
             int t = 0;
             while (tok.hasMoreTokens()) {
                 params[t] = tok.nextToken();
                 t++;
             }
-            
+
             char pn = ' ';
             int p = 1;
-     
+
             // All of this is very large and ugly, but it's the only way of providing
             // what the users want :-/
             for (int i = 0; i < params[0].length(); i++) {
                 char atPos = params[0].charAt(i);
-     
+
                 if (atPos == '+' || atPos == '-') {
                     pn = atPos;
-                }
-                else if (atPos == 'o') {
-                   if (pn == '+') {
-                       this.updateUser(channel, OP_ADD, params[p]);
-                       onOp(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
-                   }
-                   else {
-                       this.updateUser(channel, OP_REMOVE, params[p]);
-                       onDeop(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
-                   }
-                   p++;
-               }
-               else if (atPos == 'v') {
-                   if (pn == '+') {
-                       this.updateUser(channel, VOICE_ADD, params[p]);
-                       onVoice(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
-                   }
-                   else {
-                       this.updateUser(channel, VOICE_REMOVE, params[p]);
-                       onDeVoice(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
-                   }
-                   p++; 
-                }
-                else if (atPos == 'k') {
+                } else if (atPos == 'o') {
+                    if (pn == '+') {
+                        this.updateUser(channel, OP_ADD, params[p]);
+                        onOp(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
+                    } else {
+                        this.updateUser(channel, OP_REMOVE, params[p]);
+                        onDeop(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
+                    }
+                    p++;
+                } else if (atPos == 'v') {
+                    if (pn == '+') {
+                        this.updateUser(channel, VOICE_ADD, params[p]);
+                        onVoice(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
+                    } else {
+                        this.updateUser(channel, VOICE_REMOVE, params[p]);
+                        onDeVoice(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
+                    }
+                    p++;
+                } else if (atPos == 'k') {
                     if (pn == '+') {
                         onSetChannelKey(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
-                    }
-                    else {
+                    } else {
                         onRemoveChannelKey(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
                     }
                     p++;
-                }
-                else if (atPos == 'l') {
+                } else if (atPos == 'l') {
                     if (pn == '+') {
-                        onSetChannelLimit(channel, sourceNick, sourceLogin, sourceHostname, Integer.parseInt(params[p]));
+                        onSetChannelLimit(channel, sourceNick, sourceLogin, sourceHostname,
+                                Integer.parseInt(params[p]));
                         p++;
-                    }
-                    else {
+                    } else {
                         onRemoveChannelLimit(channel, sourceNick, sourceLogin, sourceHostname);
                     }
-                }
-                else if (atPos == 'b') {
+                } else if (atPos == 'b') {
                     if (pn == '+') {
-                        onSetChannelBan(channel, sourceNick, sourceLogin, sourceHostname,params[p]);
-                    }
-                    else {
+                        onSetChannelBan(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
+                    } else {
                         onRemoveChannelBan(channel, sourceNick, sourceLogin, sourceHostname, params[p]);
                     }
                     p++;
-                }
-                else if (atPos == 't') {
+                } else if (atPos == 't') {
                     if (pn == '+') {
                         onSetTopicProtection(channel, sourceNick, sourceLogin, sourceHostname);
-                    }
-                    else {
+                    } else {
                         onRemoveTopicProtection(channel, sourceNick, sourceLogin, sourceHostname);
                     }
-                }
-                else if (atPos == 'n') {
+                } else if (atPos == 'n') {
                     if (pn == '+') {
                         onSetNoExternalMessages(channel, sourceNick, sourceLogin, sourceHostname);
-                    }
-                    else {
+                    } else {
                         onRemoveNoExternalMessages(channel, sourceNick, sourceLogin, sourceHostname);
                     }
-                }
-                else if (atPos == 'i') {
+                } else if (atPos == 'i') {
                     if (pn == '+') {
                         onSetInviteOnly(channel, sourceNick, sourceLogin, sourceHostname);
-                    }
-                    else {
+                    } else {
                         onRemoveInviteOnly(channel, sourceNick, sourceLogin, sourceHostname);
                     }
-                }
-                else if (atPos == 'm') {
+                } else if (atPos == 'm') {
                     if (pn == '+') {
                         onSetModerated(channel, sourceNick, sourceLogin, sourceHostname);
-                    }
-                    else {
+                    } else {
                         onRemoveModerated(channel, sourceNick, sourceLogin, sourceHostname);
                     }
-                }
-                else if (atPos == 'p') {
+                } else if (atPos == 'p') {
                     if (pn == '+') {
                         onSetPrivate(channel, sourceNick, sourceLogin, sourceHostname);
-                    }
-                    else {
+                    } else {
                         onRemovePrivate(channel, sourceNick, sourceLogin, sourceHostname);
                     }
-                }
-                else if (atPos == 's') {
+                } else if (atPos == 's') {
                     if (pn == '+') {
                         onSetSecret(channel, sourceNick, sourceLogin, sourceHostname);
-                    }
-                    else {
+                    } else {
                         onRemoveSecret(channel, sourceNick, sourceLogin, sourceHostname);
                     }
                 }
             }
-        
+
             this.onMode(channel, sourceNick, sourceLogin, sourceHostname, mode);
-        }
-        else {
+        } else {
             // The mode of a user is being changed.
             String nick = target;
             this.onUserMode(nick, sourceNick, sourceLogin, sourceHostname, mode);
         }
     }
-    
-    
+
     /**
      * Called when the mode of a channel is set.
-     *  <p>
+     * <p>
      * You may find it more convenient to decode the meaning of the mode
      * string by overriding the onOp, onDeOp, onVoice, onDeVoice,
      * onChannelKey, onDeChannelKey, onChannelLimit, onDeChannelLimit,
      * onChannelBan or onDeChannelBan methods as appropriate.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
-     * @param channel The channel that the mode operation applies to.
-     * @param sourceNick The nick of the user that set the mode.
-     * @param sourceLogin The login of the user that set the mode.
+     * @param channel        The channel that the mode operation applies to.
+     * @param sourceNick     The nick of the user that set the mode.
+     * @param sourceLogin    The login of the user that set the mode.
      * @param sourceHostname The hostname of the user that set the mode.
-     * @param mode The mode that has been set.
+     * @param mode           The mode that has been set.
      * 
      */
-    protected void onMode(String channel, String sourceNick, String sourceLogin, String sourceHostname, String mode) {}
+    protected void onMode(String channel, String sourceNick, String sourceLogin, String sourceHostname, String mode) {
+    }
 
-    
     /**
      * Called when the mode of a user is set.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 1.2.0
      * 
-     * @param targetNick The nick that the mode operation applies to.
-     * @param sourceNick The nick of the user that set the mode.
-     * @param sourceLogin The login of the user that set the mode.
+     * @param targetNick     The nick that the mode operation applies to.
+     * @param sourceNick     The nick of the user that set the mode.
+     * @param sourceLogin    The login of the user that set the mode.
      * @param sourceHostname The hostname of the user that set the mode.
-     * @param mode The mode that has been set.
+     * @param mode           The mode that has been set.
      * 
      */
-    protected void onUserMode(String targetNick, String sourceNick, String sourceLogin, String sourceHostname, String mode) {}
-    
-    
-    
+    protected void onUserMode(String targetNick, String sourceNick, String sourceLogin, String sourceHostname,
+            String mode) {
+    }
+
     /**
      * Called when a user (possibly us) gets granted operator status for a channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param recipient The nick of the user that got 'opped'.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param recipient      The nick of the user that got 'opped'.
      */
-    protected void onOp(String channel, String sourceNick, String sourceLogin, String sourceHostname, String recipient) {}
-
+    protected void onOp(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String recipient) {
+    }
 
     /**
      * Called when a user (possibly us) gets operator status taken away.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param recipient The nick of the user that got 'deopped'.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param recipient      The nick of the user that got 'deopped'.
      */
-    protected void onDeop(String channel, String sourceNick, String sourceLogin, String sourceHostname, String recipient) {}
-
+    protected void onDeop(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String recipient) {
+    }
 
     /**
      * Called when a user (possibly us) gets voice status granted in a channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param recipient The nick of the user that got 'voiced'.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param recipient      The nick of the user that got 'voiced'.
      */
-    protected void onVoice(String channel, String sourceNick, String sourceLogin, String sourceHostname, String recipient) {}
-
+    protected void onVoice(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String recipient) {
+    }
 
     /**
      * Called when a user (possibly us) gets voice status removed.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param recipient The nick of the user that got 'devoiced'.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param recipient      The nick of the user that got 'devoiced'.
      */
-    protected void onDeVoice(String channel, String sourceNick, String sourceLogin, String sourceHostname, String recipient) {}
-
+    protected void onDeVoice(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String recipient) {
+    }
 
     /**
-     * Called when a channel key is set.  When the channel key has been set,
-     * other users may only join that channel if they know the key.  Channel keys
+     * Called when a channel key is set. When the channel key has been set,
+     * other users may only join that channel if they know the key. Channel keys
      * are sometimes referred to as passwords.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param key The new key for the channel.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param key            The new key for the channel.
      */
-    protected void onSetChannelKey(String channel, String sourceNick, String sourceLogin, String sourceHostname, String key) {}
-
+    protected void onSetChannelKey(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String key) {
+    }
 
     /**
      * Called when a channel key is removed.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param key The key that was in use before the channel key was removed.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param key            The key that was in use before the channel key was
+     *                       removed.
      */
-    protected void onRemoveChannelKey(String channel, String sourceNick, String sourceLogin, String sourceHostname, String key) {}
-
+    protected void onRemoveChannelKey(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String key) {
+    }
 
     /**
-     * Called when a user limit is set for a channel.  The number of users in
+     * Called when a user limit is set for a channel. The number of users in
      * the channel cannot exceed this limit.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param limit The maximum number of users that may be in this channel at the same time.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param limit          The maximum number of users that may be in this channel
+     *                       at the same time.
      */
-    protected void onSetChannelLimit(String channel, String sourceNick, String sourceLogin, String sourceHostname, int limit) {}
-
+    protected void onSetChannelLimit(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            int limit) {
+    }
 
     /**
      * Called when the user limit is removed for a channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemoveChannelLimit(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-
+    protected void onRemoveChannelLimit(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
 
     /**
-     * Called when a user (possibly us) gets banned from a channel.  Being
+     * Called when a user (possibly us) gets banned from a channel. Being
      * banned from a channel prevents any user with a matching hostmask from
-     * joining the channel.  For this reason, most bans are usually directly
+     * joining the channel. For this reason, most bans are usually directly
      * followed by the user being kicked :-)
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
-     * @param hostmask The hostmask of the user that has been banned.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
+     * @param hostmask       The hostmask of the user that has been banned.
      */
-    protected void onSetChannelBan(String channel, String sourceNick, String sourceLogin, String sourceHostname, String hostmask) {}
-
+    protected void onSetChannelBan(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String hostmask) {
+    }
 
     /**
      * Called when a hostmask ban is removed from a channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      * @param hostmask
      */
-    protected void onRemoveChannelBan(String channel, String sourceNick, String sourceLogin, String sourceHostname, String hostmask) {}
+    protected void onRemoveChannelBan(String channel, String sourceNick, String sourceLogin, String sourceHostname,
+            String hostmask) {
+    }
 
-    
     /**
-     * Called when topic protection is enabled for a channel.  Topic protection
+     * Called when topic protection is enabled for a channel. Topic protection
      * means that only operators in a channel may change the topic.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onSetTopicProtection(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onSetTopicProtection(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when topic protection is removed for a channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemoveTopicProtection(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onRemoveTopicProtection(String channel, String sourceNick, String sourceLogin,
+            String sourceHostname) {
+    }
+
     /**
      * Called when a channel is set to only allow messages from users that
      * are in the channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onSetNoExternalMessages(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onSetNoExternalMessages(String channel, String sourceNick, String sourceLogin,
+            String sourceHostname) {
+    }
+
     /**
      * Called when a channel is set to allow messages from any user, even
      * if they are not actually in the channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemoveNoExternalMessages(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onRemoveNoExternalMessages(String channel, String sourceNick, String sourceLogin,
+            String sourceHostname) {
+    }
+
     /**
-     * Called when a channel is set to 'invite only' mode.  A user may only
+     * Called when a channel is set to 'invite only' mode. A user may only
      * join the channel if they are invited by someone who is already in the
      * channel.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onSetInviteOnly(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onSetInviteOnly(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when a channel has 'invite only' removed.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemoveInviteOnly(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onRemoveInviteOnly(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
-     * Called when a channel is set to 'moderated' mode.  If a channel is
+     * Called when a channel is set to 'moderated' mode. If a channel is
      * moderated, then only users who have been 'voiced' or 'opped' may speak
      * or change their nicks.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onSetModerated(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onSetModerated(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when a channel has moderated mode removed.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemoveModerated(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onRemoveModerated(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when a channel is marked as being in private mode.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onSetPrivate(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onSetPrivate(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when a channel is marked as not being in private mode.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemovePrivate(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onRemovePrivate(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
-     * Called when a channel is set to be in 'secret' mode.  Such channels
+     * Called when a channel is set to be in 'secret' mode. Such channels
      * typically do not appear on a server's channel listing.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onSetSecret(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onSetSecret(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when a channel has 'secret' mode removed.
-     *  <p>
+     * <p>
      * This is a type of mode change and is also passed to the onMode
      * method in the ublab-bot class.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      *
-     * @param channel The channel in which the mode change took place.
-     * @param sourceNick The nick of the user that performed the mode change.
-     * @param sourceLogin The login of the user that performed the mode change.
-     * @param sourceHostname The hostname of the user that performed the mode change.
+     * @param channel        The channel in which the mode change took place.
+     * @param sourceNick     The nick of the user that performed the mode change.
+     * @param sourceLogin    The login of the user that performed the mode change.
+     * @param sourceHostname The hostname of the user that performed the mode
+     *                       change.
      */
-    protected void onRemoveSecret(String channel, String sourceNick, String sourceLogin, String sourceHostname) {}
-    
-    
+    protected void onRemoveSecret(String channel, String sourceNick, String sourceLogin, String sourceHostname) {
+    }
+
     /**
      * Called when we are invited to a channel by a user.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
      * @since ublab-bot 0.9.5
      * 
-     * @param targetNick The nick of the user being invited - should be us!
-     * @param sourceNick The nick of the user that sent the invitation.
-     * @param sourceLogin The login of the user that sent the invitation.
+     * @param targetNick     The nick of the user being invited - should be us!
+     * @param sourceNick     The nick of the user that sent the invitation.
+     * @param sourceLogin    The login of the user that sent the invitation.
      * @param sourceHostname The hostname of the user that sent the invitation.
-     * @param channel The channel that we're being invited to.
+     * @param channel        The channel that we're being invited to.
      */
-    protected void onInvite(String targetNick, String sourceNick, String sourceLogin, String sourceHostname, String channel)  {}    
-
+    protected void onInvite(String targetNick, String sourceNick, String sourceLogin, String sourceHostname,
+            String channel) {
+    }
 
     /**
-     * This method used to be called when a DCC SEND request was sent to the ublab-bot.
+     * This method used to be called when a DCC SEND request was sent to the
+     * ublab-bot.
      * Please use the onIncomingFileTransfer method to receive files, as it
      * has better functionality and supports resuming.
      * 
-     * @deprecated As of ublab-bot 1.2.0, use {@link #onIncomingFileTransfer(DccFileTransfer)}
+     * @deprecated As of ublab-bot 1.2.0, use
+     *             {@link #onIncomingFileTransfer(DccFileTransfer)}
      */
-    protected void onDccSendRequest(String sourceNick, String sourceLogin, String sourceHostname, String filename, long address, int port, int size) {}
-    
-    
+    protected void onDccSendRequest(String sourceNick, String sourceLogin, String sourceHostname, String filename,
+            long address, int port, int size) {
+    }
+
     /**
-     * This method used to be called when a DCC CHAT request was sent to the ublab-bot.
+     * This method used to be called when a DCC CHAT request was sent to the
+     * ublab-bot.
      * Please use the onIncomingChatRequest method to accept chats, as it
      * has better functionality.
      * 
-     * @deprecated As of ublab-bot 1.2.0, use {@link #onIncomingChatRequest(DccChat)}
+     * @deprecated As of ublab-bot 1.2.0, use
+     *             {@link #onIncomingChatRequest(DccChat)}
      */
-    protected void onDccChatRequest(String sourceNick, String sourceLogin, String sourceHostname, long address, int port) {}
-    
-    
+    protected void onDccChatRequest(String sourceNick, String sourceLogin, String sourceHostname, long address,
+            int port) {
+    }
+
     /**
      * This method is called whenever a DCC SEND request is sent to the ublab-bot.
      * This means that a client has requested to send a file to us.
@@ -2120,31 +2087,34 @@ public abstract class UblabBot implements ReplyConstants {
      * the file, then you may override this method and call the receive method
      * on the DccFileTransfer object, which connects to the sender and downloads
      * the file.
-     *  <p>
+     * <p>
      * Example:
-     * <pre> public void onIncomingFileTransfer(DccFileTransfer transfer) {
+     * 
+     * <pre>
+     * public void onIncomingFileTransfer(DccFileTransfer transfer) {
      *     // Use the suggested file name.
      *     File file = transfer.getFile();
      *     // Receive the transfer and save it to the file, allowing resuming.
      *     transfer.receive(file, true);
-     * }</pre>
-     *  <p>
+     * }
+     * </pre>
+     * <p>
      * <b>Warning:</b> Receiving an incoming file transfer will cause a file
      * to be written to disk. Please ensure that you make adequate security
      * checks so that this file does not overwrite anything important!
-     *  <p>
+     * <p>
      * Each time a file is received, it happens within a new Thread
      * in order to allow multiple files to be downloaded by the ublab-bot
-     * at the same time. 
-     *  <p>
+     * at the same time.
+     * <p>
      * If you allow resuming and the file already partly exists, it will
-     * be appended to instead of overwritten.  If resuming is not enabled,
+     * be appended to instead of overwritten. If resuming is not enabled,
      * the file will be overwritten if it already exists.
-     *  <p>
+     * <p>
      * You can throttle the speed of the transfer by calling the setPacketDelay
      * method on the DccFileTransfer object, either before you receive the
      * file or at any moment during the transfer.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
@@ -2155,14 +2125,14 @@ public abstract class UblabBot implements ReplyConstants {
      * @see DccFileTransfer
      * 
      */
-    protected void onIncomingFileTransfer(DccFileTransfer transfer) {}
-    
-    
+    protected void onIncomingFileTransfer(DccFileTransfer transfer) {
+    }
+
     /**
      * This method gets called when a DccFileTransfer has finished.
      * If there was a problem, the Exception will say what went wrong.
      * If the file was sent successfully, the Exception will be null.
-     *  <p>
+     * <p>
      * Both incoming and outgoing file transfers are passed to this method.
      * You can determine the type by calling the isIncoming or isOutgoing
      * methods on the DccFileTransfer object.
@@ -2170,15 +2140,15 @@ public abstract class UblabBot implements ReplyConstants {
      * @since ublab-bot 1.2.0
      * 
      * @param transfer The DccFileTransfer that has finished.
-     * @param e null if the file was transfered successfully, otherwise this
-     *          will report what went wrong.
+     * @param e        null if the file was transfered successfully, otherwise this
+     *                 will report what went wrong.
      * 
      * @see DccFileTransfer
      * 
      */
-    protected void onFileTransferFinished(DccFileTransfer transfer, Exception e) {}
-    
-    
+    protected void onFileTransferFinished(DccFileTransfer transfer, Exception e) {
+    }
+
     /**
      * This method will be called whenever a DCC Chat request is received.
      * This means that a client has requested to chat to us directly rather
@@ -2187,30 +2157,33 @@ public abstract class UblabBot implements ReplyConstants {
      * or any operators of the server being able to "spy" on what is being
      * said. This abstract implementation performs no action, which means
      * that all DCC CHAT requests will be ignored by default.
-     *  <p>
+     * <p>
      * If you wish to accept the connection, then you may override this
      * method and call the accept() method on the DccChat object, which
      * connects to the sender of the chat request and allows lines to be
      * sent to and from the bot.
-     *  <p>
+     * <p>
      * Your bot must be able to connect directly to the user that sent the
      * request.
-     *  <p>
-     * Example: 
-     * <pre> public void onIncomingChatRequest(DccChat chat) {
+     * <p>
+     * Example:
+     * 
+     * <pre>
+     * public void onIncomingChatRequest(DccChat chat) {
      *     try {
      *         // Accept all chat, whoever it's from.
      *         chat.accept();
      *         chat.sendLine("Hello");
      *         String response = chat.readLine();
      *         chat.close();
+     *     } catch (IOException e) {
      *     }
-     *     catch (IOException e) {}
-     * }</pre>
+     * }
+     * </pre>
      * 
      * Each time this method is called, it is called from within a new Thread
      * so that multiple DCC CHAT sessions can run concurrently.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      *
@@ -2221,47 +2194,49 @@ public abstract class UblabBot implements ReplyConstants {
      * @see DccChat
      * 
      */
-    protected void onIncomingChatRequest(DccChat chat) {}
-    
-    
+    protected void onIncomingChatRequest(DccChat chat) {
+    }
+
     /**
      * This method is called whenever we receive a VERSION request.
      * This abstract implementation responds with the ublab-bot's _version string,
      * so if you override this method, be sure to either mimic its functionality
      * or to call super.onVersion(...);
      * 
-     * @param sourceNick The nick of the user that sent the VERSION request.
-     * @param sourceLogin The login of the user that sent the VERSION request.
+     * @param sourceNick     The nick of the user that sent the VERSION request.
+     * @param sourceLogin    The login of the user that sent the VERSION request.
      * @param sourceHostname The hostname of the user that sent the VERSION request.
-     * @param target The target of the VERSION request, be it our nick or a channel name.
+     * @param target         The target of the VERSION request, be it our nick or a
+     *                       channel name.
      */
     protected void onVersion(String sourceNick, String sourceLogin, String sourceHostname, String target) {
         this.sendRawLine("NOTICE " + sourceNick + " :\u0001VERSION " + _version + "\u0001");
     }
-    
-    
+
     /**
      * This method is called whenever we receive a PING request from another
      * user.
-     *  <p>
+     * <p>
      * This abstract implementation responds correctly, so if you override this
      * method, be sure to either mimic its functionality or to call
      * super.onPing(...);
      * 
-     * @param sourceNick The nick of the user that sent the PING request.
-     * @param sourceLogin The login of the user that sent the PING request.
+     * @param sourceNick     The nick of the user that sent the PING request.
+     * @param sourceLogin    The login of the user that sent the PING request.
      * @param sourceHostname The hostname of the user that sent the PING request.
-     * @param target The target of the PING request, be it our nick or a channel name.
-     * @param pingValue The value that was supplied as an argument to the PING command.
+     * @param target         The target of the PING request, be it our nick or a
+     *                       channel name.
+     * @param pingValue      The value that was supplied as an argument to the PING
+     *                       command.
      */
-    protected void onPing(String sourceNick, String sourceLogin, String sourceHostname, String target, String pingValue) {
+    protected void onPing(String sourceNick, String sourceLogin, String sourceHostname, String target,
+            String pingValue) {
         this.sendRawLine("NOTICE " + sourceNick + " :\u0001PING " + pingValue + "\u0001");
     }
-    
-    
+
     /**
      * The actions to perform when a PING request comes from the server.
-     *  <p>
+     * <p>
      * This sends back a correct response, so if you override this method,
      * be sure to either mimic its functionality or to call
      * super.onServerPing(response);
@@ -2271,46 +2246,45 @@ public abstract class UblabBot implements ReplyConstants {
     protected void onServerPing(String response) {
         this.sendRawLine("PONG " + response);
     }
-    
-    
+
     /**
      * This method is called whenever we receive a TIME request.
-     *  <p>
+     * <p>
      * This abstract implementation responds correctly, so if you override this
      * method, be sure to either mimic its functionality or to call
      * super.onTime(...);
      * 
-     * @param sourceNick The nick of the user that sent the TIME request.
-     * @param sourceLogin The login of the user that sent the TIME request.
+     * @param sourceNick     The nick of the user that sent the TIME request.
+     * @param sourceLogin    The login of the user that sent the TIME request.
      * @param sourceHostname The hostname of the user that sent the TIME request.
-     * @param target The target of the TIME request, be it our nick or a channel name.
+     * @param target         The target of the TIME request, be it our nick or a
+     *                       channel name.
      */
     protected void onTime(String sourceNick, String sourceLogin, String sourceHostname, String target) {
         this.sendRawLine("NOTICE " + sourceNick + " :\u0001TIME " + new Date().toString() + "\u0001");
     }
-    
-    
+
     /**
      * This method is called whenever we receive a FINGER request.
-     *  <p>
+     * <p>
      * This abstract implementation responds correctly, so if you override this
      * method, be sure to either mimic its functionality or to call
      * super.onFinger(...);
      * 
-     * @param sourceNick The nick of the user that sent the FINGER request.
-     * @param sourceLogin The login of the user that sent the FINGER request.
+     * @param sourceNick     The nick of the user that sent the FINGER request.
+     * @param sourceLogin    The login of the user that sent the FINGER request.
      * @param sourceHostname The hostname of the user that sent the FINGER request.
-     * @param target The target of the FINGER request, be it our nick or a channel name.
+     * @param target         The target of the FINGER request, be it our nick or a
+     *                       channel name.
      */
     protected void onFinger(String sourceNick, String sourceLogin, String sourceHostname, String target) {
         this.sendRawLine("NOTICE " + sourceNick + " :\u0001FINGER " + _finger + "\u0001");
     }
-    
-    
+
     /**
      * This method is called whenever we receive a line from the server that
      * the ublab-bot has not been programmed to recognise.
-     *  <p>
+     * <p>
      * The implementation of this method in the ublab-bot abstract class
      * performs no actions and may be overridden as required.
      * 
@@ -2319,28 +2293,26 @@ public abstract class UblabBot implements ReplyConstants {
     protected void onUnknown(String line) {
         // And then there were none :)
     }
-        
-    
+
     /**
      * Sets the verbose mode. If verbose mode is set to true, then log entries
      * will be printed to the standard output. The default value is false and
      * will result in no output. For general development, we strongly recommend
      * setting the verbose mode to true.
      *
-     * @param verbose true if verbose mode is to be used.  Default is false.
+     * @param verbose true if verbose mode is to be used. Default is false.
      */
     public final void setVerbose(boolean verbose) {
         _verbose = verbose;
     }
-    
-    
+
     /**
      * Sets the name of the bot, which will be used as its nick when it
-     * tries to join an IRC server.  This should be set before joining
-     * any servers, otherwise the default nick will be used.  You would
+     * tries to join an IRC server. This should be set before joining
+     * any servers, otherwise the default nick will be used. You would
      * typically call this method from the constructor of the class that
      * extends ublab-bot.
-     *  <p>
+     * <p>
      * The changeNick method should be used if you wish to change your nick
      * when you are connected to a server.
      *
@@ -2349,10 +2321,9 @@ public abstract class UblabBot implements ReplyConstants {
     protected final void setName(String name) {
         _name = name;
     }
-    
-    
+
     /**
-     * Sets the internal nick of the bot.  This is only to be called by the
+     * Sets the internal nick of the bot. This is only to be called by the
      * ublab-bot class in response to notification of nick changes that apply
      * to us.
      * 
@@ -2361,10 +2332,9 @@ public abstract class UblabBot implements ReplyConstants {
     private final void setNick(String nick) {
         _nick = nick;
     }
-    
-    
+
     /**
-     * Sets the internal login of the Bot.  This should be set before joining
+     * Sets the internal login of the Bot. This should be set before joining
      * any servers.
      *
      * @param login The new login of the Bot.
@@ -2372,10 +2342,9 @@ public abstract class UblabBot implements ReplyConstants {
     protected final void setLogin(String login) {
         _login = login;
     }
-    
 
     /**
-     * Sets the internal version of the Bot.  This should be set before joining
+     * Sets the internal version of the Bot. This should be set before joining
      * any servers.
      *
      * @param version The new version of the Bot.
@@ -2384,9 +2353,8 @@ public abstract class UblabBot implements ReplyConstants {
         _version = version;
     }
 
-
     /**
-     * Sets the interal finger message.  This should be set before joining
+     * Sets the interal finger message. This should be set before joining
      * any servers.
      *
      * @param finger The new finger message for the Bot.
@@ -2394,8 +2362,7 @@ public abstract class UblabBot implements ReplyConstants {
     protected final void setFinger(String finger) {
         _finger = finger;
     }
-    
-    
+
     /**
      * Gets the name of the ublab-bot. This is the name that will be used as
      * as a nick when we try to join servers.
@@ -2405,13 +2372,12 @@ public abstract class UblabBot implements ReplyConstants {
     public final String getName() {
         return _name;
     }
-    
-    
+
     /**
      * Returns the current nick of the bot. Note that if you have just changed
      * your nick, this method will still return the old nick until confirmation
      * of the nick change is received from the server.
-     *  <p>
+     * <p>
      * The nick returned by this method is maintained only by the ublab-bot
      * class and is guaranteed to be correct in the context of the IRC server.
      *
@@ -2422,8 +2388,7 @@ public abstract class UblabBot implements ReplyConstants {
     public String getNick() {
         return _nick;
     }
-    
-    
+
     /**
      * Gets the internal login of the ublab-bot.
      *
@@ -2432,7 +2397,6 @@ public abstract class UblabBot implements ReplyConstants {
     public final String getLogin() {
         return _login;
     }
-    
 
     /**
      * Gets the internal version of the ublab-bot.
@@ -2442,8 +2406,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final String getVersion() {
         return _version;
     }
-    
-    
+
     /**
      * Gets the internal finger message of the ublab-bot.
      *
@@ -2452,8 +2415,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final String getFinger() {
         return _finger;
     }
-    
-    
+
     /**
      * Returns whether or not the ublab-bot is currently connected to a server.
      * The result of this method should only act as a rough guide,
@@ -2464,15 +2426,14 @@ public abstract class UblabBot implements ReplyConstants {
     public final synchronized boolean isConnected() {
         return _inputThread != null && _inputThread.isConnected();
     }
-    
-    
+
     /**
      * Sets the number of milliseconds to delay between consecutive
      * messages when there are multiple messages waiting in the
-     * outgoing message queue.  This has a default value of 1000ms.
+     * outgoing message queue. This has a default value of 1000ms.
      * It is a good idea to stick to this default value, as it will
      * prevent your bot from spamming servers and facing the subsequent
-     * wrath!  However, if you do need to change this delay value (<b>not
+     * wrath! However, if you do need to change this delay value (<b>not
      * recommended</b>), then this is the method to use.
      *
      * @param delay The number of milliseconds between each outgoing message.
@@ -2484,8 +2445,7 @@ public abstract class UblabBot implements ReplyConstants {
         }
         _messageDelay = delay;
     }
-    
-    
+
     /**
      * Returns the number of milliseconds that will be used to separate
      * consecutive messages to the server from the outgoing message queue.
@@ -2495,13 +2455,12 @@ public abstract class UblabBot implements ReplyConstants {
     public final long getMessageDelay() {
         return _messageDelay;
     }
-    
-    
+
     /**
      * Gets the maximum length of any line that is sent via the IRC protocol.
      * The IRC RFC specifies that line lengths, including the trailing \r\n
-     * must not exceed 512 bytes.  Hence, there is currently no option to
-     * change this value in ublab-bot.  All lines greater than this length
+     * must not exceed 512 bytes. Hence, there is currently no option to
+     * change this value in ublab-bot. All lines greater than this length
      * will be truncated before being sent to the IRC server.
      * 
      * @return The maximum line length (currently fixed at 512)
@@ -2509,8 +2468,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final int getMaxLineLength() {
         return InputThread.MAX_LINE_LENGTH;
     }
-    
-    
+
     /**
      * Gets the number of lines currently waiting in the outgoing message Queue.
      * If this returns 0, then the Queue is empty and any new message is likely
@@ -2523,8 +2481,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final int getOutgoingQueueSize() {
         return _outQueue.size();
     }
-    
-    
+
     /**
      * Returns the name of the last IRC server the ublab-bot tried to connect to.
      * This does not imply that the connection attempt to the server was
@@ -2538,8 +2495,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final String getServer() {
         return _server;
     }
-    
-    
+
     /**
      * Returns the port number of the last IRC server that the ublab-bot tried
      * to connect to.
@@ -2556,8 +2512,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final int getPort() {
         return _port;
     }
-    
-    
+
     /**
      * Returns the last password that we used when connecting to an IRC server.
      * This does not imply that the connection attempt to the server was
@@ -2573,8 +2528,7 @@ public abstract class UblabBot implements ReplyConstants {
     public final String getPassword() {
         return _password;
     }
-    
-    
+
     /**
      * A convenient method that accepts an IP address represented as a
      * long and returns an integer array of size 4 representing the same
@@ -2595,7 +2549,6 @@ public abstract class UblabBot implements ReplyConstants {
         return ip;
     }
 
-    
     /**
      * A convenient method that accepts an IP address represented by a byte[]
      * of size 4 and returns this as a long representation of the same IP
@@ -2615,19 +2568,18 @@ public abstract class UblabBot implements ReplyConstants {
         long multiplier = 1;
         for (int i = 3; i >= 0; i--) {
             int byteVal = (address[i] + 256) % 256;
-            ipNum += byteVal*multiplier;
+            ipNum += byteVal * multiplier;
             multiplier *= 256;
         }
         return ipNum;
     }
-    
-    
+
     /**
      * Sets the encoding charset to be used when sending or receiving lines
-     * from the IRC server.  If set to null, then the platform's default
-     * charset is used.  You should only use this method if you are
+     * from the IRC server. If set to null, then the platform's default
+     * charset is used. You should only use this method if you are
      * trying to send text to an IRC server in a different charset, e.g.
-     * "GB2312" for Chinese encoding.  If a ublab-bot is currently connected
+     * "GB2312" for Chinese encoding. If a ublab-bot is currently connected
      * to a server, then it must reconnect before this change takes effect.
      * 
      * @since ublab-bot 1.0.4
@@ -2640,14 +2592,13 @@ public abstract class UblabBot implements ReplyConstants {
     public void setEncoding(String charset) throws UnsupportedEncodingException {
         // Just try to see if the charset is supported first...
         "".getBytes(charset);
-        
+
         _charset = charset;
     }
 
-    
     /**
      * Returns the encoding used to send and receive lines from
-     * the IRC server, or null if not set.  Use the setEncoding
+     * the IRC server, or null if not set. Use the setEncoding
      * method to change the encoding charset.
      * 
      * @since ublab-bot 1.0.4
@@ -2658,7 +2609,7 @@ public abstract class UblabBot implements ReplyConstants {
     public String getEncoding() {
         return _charset;
     }
-    
+
     /**
      * Returns the InetAddress used by the ublab-bot.
      * This can be used to find the I.P. address from which the ublab-bot is
@@ -2671,7 +2622,6 @@ public abstract class UblabBot implements ReplyConstants {
     public InetAddress getInetAddress() {
         return _inetAddress;
     }
-    
 
     /**
      * Sets the InetAddress to be used when sending DCC chat or file transfers.
@@ -2686,7 +2636,6 @@ public abstract class UblabBot implements ReplyConstants {
     public void setDccInetAddress(InetAddress dccInetAddress) {
         _dccInetAddress = dccInetAddress;
     }
-    
 
     /**
      * Returns the InetAddress used when sending DCC chat or file transfers.
@@ -2699,15 +2648,14 @@ public abstract class UblabBot implements ReplyConstants {
     public InetAddress getDccInetAddress() {
         return _dccInetAddress;
     }
-    
-    
+
     /**
      * Returns the set of port numbers to be used when sending a DCC chat
      * or file transfer. This is useful when you are behind a firewall and
      * need to set up port forwarding. The array of port numbers is traversed
      * in sequence until a free port is found to listen on. A DCC tranfer will
      * fail if all ports are already in use.
-     * If set to null, <i>any</i> free port number will be used. 
+     * If set to null, <i>any</i> free port number will be used.
      * 
      * @since ublab-bot 1.4.4
      * 
@@ -2721,15 +2669,14 @@ public abstract class UblabBot implements ReplyConstants {
         // Clone the array to prevent external modification.
         return (int[]) _dccPorts.clone();
     }
-    
-    
+
     /**
      * Sets the choice of port numbers that can be used when sending a DCC chat
      * or file transfer. This is useful when you are behind a firewall and
      * need to set up port forwarding. The array of port numbers is traversed
      * in sequence until a free port is found to listen on. A DCC tranfer will
      * fail if all ports are already in use.
-     * If set to null, <i>any</i> free port number will be used. 
+     * If set to null, <i>any</i> free port number will be used.
      * 
      * @since ublab-bot 1.4.4
      * 
@@ -2740,14 +2687,12 @@ public abstract class UblabBot implements ReplyConstants {
     public void setDccPorts(int[] ports) {
         if (ports == null || ports.length == 0) {
             _dccPorts = null;
-        }
-        else {
+        } else {
             // Clone the array to prevent external modification.
             _dccPorts = (int[]) ports.clone();
         }
-    }    
-    
-    
+    }
+
     /**
      * Returns true if and only if the object being compared is the exact
      * same instance as this ublab-bot. This may be useful if you are writing
@@ -2764,8 +2709,7 @@ public abstract class UblabBot implements ReplyConstants {
         }
         return false;
     }
-    
-    
+
     /**
      * Returns the hashCode of this ublab-bot. This method can be called by hashed
      * collection classes and is useful for managing multiple instances of
@@ -2778,8 +2722,7 @@ public abstract class UblabBot implements ReplyConstants {
     public int hashCode() {
         return super.hashCode();
     }
-    
-    
+
     /**
      * Returns a String representation of this object.
      * You may find this useful for debugging purposes, particularly
@@ -2806,27 +2749,26 @@ public abstract class UblabBot implements ReplyConstants {
                 " Port{" + _port + "}" +
                 " Password{" + _password + "}";
     }
-    
-    
+
     /**
      * Returns an array of all users in the specified channel.
-     *  <p>
+     * <p>
      * There are some important things to note about this method:-
      * <ul>
-     *  <li>This method may not return a full list of users if you call it
-     *      before the complete nick list has arrived from the IRC server.
-     *  </li>
-     *  <li>If you wish to find out which users are in a channel as soon
-     *      as you join it, then you should override the onUserList method
-     *      instead of calling this method, as the onUserList method is only
-     *      called as soon as the full user list has been received.
-     *  </li>
-     *  <li>This method will return immediately, as it does not require any
-     *      interaction with the IRC server.
-     *  </li>
-     *  <li>The bot must be in a channel to be able to know which users are
-     *      in it.
-     *  </li>
+     * <li>This method may not return a full list of users if you call it
+     * before the complete nick list has arrived from the IRC server.
+     * </li>
+     * <li>If you wish to find out which users are in a channel as soon
+     * as you join it, then you should override the onUserList method
+     * instead of calling this method, as the onUserList method is only
+     * called as soon as the full user list has been received.
+     * </li>
+     * <li>This method will return immediately, as it does not require any
+     * interaction with the IRC server.
+     * </li>
+     * <li>The bot must be in a channel to be able to know which users are
+     * in it.
+     * </li>
      * </ul>
      * 
      * @since ublab-bot 1.0.0
@@ -2854,10 +2796,9 @@ public abstract class UblabBot implements ReplyConstants {
         }
         return userArray;
     }
-    
-    
+
     /**
-     * Returns an array of all channels that we are in.  Note that if you
+     * Returns an array of all channels that we are in. Note that if you
      * call this method immediately after joining a new channel, the new
      * channel may not appear in this array as it is not possible to tell
      * if the join was successful until a response is received from the
@@ -2879,21 +2820,20 @@ public abstract class UblabBot implements ReplyConstants {
         }
         return channels;
     }
-    
-    
+
     /**
      * Disposes of all thread resources used by this ublab-bot. This may be
      * useful when writing bots or clients that use multiple servers (and
      * therefore multiple ublab-bot instances) or when integrating a ublab-bot
      * with an existing program.
-     *  <p>
+     * <p>
      * Each ublab-bot runs its own threads for dispatching messages from its
      * outgoing message queue and receiving messages from the server.
      * Calling dispose() ensures that these threads are
      * stopped, thus freeing up system resources and allowing the ublab-bot
      * object to be garbage collected if there are no other references to
      * it.
-     *  <p>
+     * <p>
      * Once a ublab-bot object has been disposed, it should not be used again.
      * Attempting to use a ublab-bot that has been disposed may result in
      * unpredictable behaviour.
@@ -2901,12 +2841,11 @@ public abstract class UblabBot implements ReplyConstants {
      * @since 1.2.2
      */
     public synchronized void dispose() {
-        //System.out.println("disposing...");
+        // System.out.println("disposing...");
         _outputThread.interrupt();
         _inputThread.dispose();
     }
-    
-    
+
     /**
      * Add a user to the specified channel in our memory.
      * Overwrite the existing entry if it exists.
@@ -2922,8 +2861,7 @@ public abstract class UblabBot implements ReplyConstants {
             users.put(user, user);
         }
     }
-    
-    
+
     /**
      * Remove a user from the specified channel in our memory.
      */
@@ -2938,8 +2876,7 @@ public abstract class UblabBot implements ReplyConstants {
         }
         return null;
     }
-    
-    
+
     /**
      * Remove a user from all channels in our memory.
      */
@@ -2952,8 +2889,7 @@ public abstract class UblabBot implements ReplyConstants {
             }
         }
     }
-    
-    
+
     /**
      * Rename a user if they appear in any of the channels we know about.
      */
@@ -2970,8 +2906,7 @@ public abstract class UblabBot implements ReplyConstants {
             }
         }
     }
-    
-    
+
     /**
      * Removes an entire channel from our memory of users.
      */
@@ -2981,17 +2916,15 @@ public abstract class UblabBot implements ReplyConstants {
             _channels.remove(channel);
         }
     }
-    
-    
+
     /**
      * Removes all channels from our memory of users.
      */
     private final void removeAllChannels() {
-        synchronized(_channels) {
+        synchronized (_channels) {
             _channels = new Hashtable();
         }
     }
-
 
     private final void updateUser(String channel, int userMode, String nick) {
         channel = channel.toLowerCase();
@@ -3000,38 +2933,31 @@ public abstract class UblabBot implements ReplyConstants {
             User newUser = null;
             if (users != null) {
                 Enumeration enumeration = users.elements();
-                while(enumeration.hasMoreElements()) {
+                while (enumeration.hasMoreElements()) {
                     User userObj = (User) enumeration.nextElement();
                     if (userObj.getNick().equalsIgnoreCase(nick)) {
                         if (userMode == OP_ADD) {
                             if (userObj.hasVoice()) {
                                 newUser = new User("@+", nick);
-                            }
-                            else {
+                            } else {
                                 newUser = new User("@", nick);
                             }
-                        }
-                        else if (userMode == OP_REMOVE) {
-                            if(userObj.hasVoice()) {
+                        } else if (userMode == OP_REMOVE) {
+                            if (userObj.hasVoice()) {
                                 newUser = new User("+", nick);
-                            }
-                            else {
+                            } else {
                                 newUser = new User("", nick);
                             }
-                        }
-                        else if (userMode == VOICE_ADD) {
-                            if(userObj.isOp()) {
+                        } else if (userMode == VOICE_ADD) {
+                            if (userObj.isOp()) {
                                 newUser = new User("@+", nick);
-                            }
-                            else {
+                            } else {
                                 newUser = new User("+", nick);
                             }
-                        }
-                        else if (userMode == VOICE_REMOVE) {
-                            if(userObj.isOp()) {
+                        } else if (userMode == VOICE_REMOVE) {
+                            if (userObj.isOp()) {
                                 newUser = new User("@", nick);
-                            }
-                            else {
+                            } else {
                                 newUser = new User("", nick);
                             }
                         }
@@ -3040,15 +2966,13 @@ public abstract class UblabBot implements ReplyConstants {
             }
             if (newUser != null) {
                 users.put(newUser, newUser);
-            }
-            else {
+            } else {
                 // just in case ...
                 newUser = new User("", nick);
                 users.put(newUser, newUser);
             }
         }
     }
-
 
     // Connection stuff.
     private InputThread _inputThread = null;
@@ -3060,24 +2984,24 @@ public abstract class UblabBot implements ReplyConstants {
     private String _server = null;
     private int _port = -1;
     private String _password = null;
-    
+
     // Outgoing message stuff.
     private Queue _outQueue = new Queue();
     private long _messageDelay = 1000;
-    
+
     // A Hashtable of channels that points to a selfreferential Hashtable of
     // User objects (used to remember which users are in which channels).
     private Hashtable _channels = new Hashtable();
-    
+
     // A Hashtable to temporarily store channel topics when we join them
     // until we find out who set that topic.
     private Hashtable _topics = new Hashtable();
-    
+
     // DccManager to process and handle all DCC events.
     private DccManager _dccManager = new DccManager(this);
     private int[] _dccPorts = null;
     private InetAddress _dccInetAddress = null;
-    
+
     // Default settings for the ublab-bot.
     private boolean _autoNickChange = false;
     private boolean _verbose = false;
@@ -3086,6 +3010,6 @@ public abstract class UblabBot implements ReplyConstants {
     private String _login = "ublab-bot";
     private String _version = "ublab-bot " + VERSION;
     private String _finger = "You ought to be arrested for fingering a bot!";
-    
+
     private String _channelPrefixes = "#&+!";
 }
